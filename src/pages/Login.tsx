@@ -194,7 +194,7 @@ export default function Login() {
                 )}
 
                 <Button type="submit" className="w-full" disabled={enviando}>
-                  {enviado && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {enviando && <Loader2 className="h-4 w-4 animate-spin" />}
                   {modo === "login" ? "Entrar" : "Enviar instruções"}
                 </Button>
 

@@ -115,9 +115,9 @@ export default function Login() {
             <CardContent className="p-6 sm:p-8">
               {modo === "login" ? (
                 <>
-                  <h2 className="text-xl font-semibold">Acessar o sistema</h2>
+                  <h2 className="text-xl font-semibold">Acessar sistema</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Informe suas credenciais institucionais para entrar.
+                    Informe suas credenciais para entrar.
                   </p>
                 </>
               ) : (
@@ -216,8 +216,7 @@ export default function Login() {
               </form>
 
               <p className="mt-6 rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                Não existe cadastro público. O acesso é criado exclusivamente pelo Administrador do
-                SisPatri. Em caso de dúvida, procure a Secretaria de Planejamento e Finanças.
+                @2026 - Desenvolvido pela Equipe de Gestão Tributária da SMPF. Em caso de dúvida, procure a Secretaria de Planejamento e Finanças.
               </p>
             </CardContent>
           </Card>

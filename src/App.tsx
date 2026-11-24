@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import Login from "@/pages/Login";
+import CadastroAdministrador from "@/pages/CadastroAdministrador";
 import RedefinirSenha from "@/pages/RedefinirSenha";
 import Home from "@/pages/Home";
 import AppLayout from "@/components/layout/AppLayout";
@@ -50,6 +51,14 @@ export default function App() {
         element={
           <RotasPublicas>
             <Login />
+          </RotasPublicas>
+        }
+      />
+      <Route
+        path="/cadastro-administrador"
+        element={
+          <RotasPublicas>
+            <CadastroAdministrador />
           </RotasPublicas>
         }
       />

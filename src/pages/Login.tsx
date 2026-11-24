@@ -227,6 +227,16 @@ export default function Login() {
               Esqueci minha senha
             </Link>
           </p>
+
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            Primeira instalação do sistema?{" "}
+            <Link
+              to="/cadastro-administrador"
+              className="font-medium text-primary hover:underline"
+            >
+              Cadastrar administrador
+            </Link>
+          </p>
         </div>
       </section>
     </div>

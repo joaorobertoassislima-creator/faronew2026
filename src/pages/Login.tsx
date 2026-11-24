@@ -224,7 +224,7 @@ export default function Login() {
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Precisa redefinir a senha?{" "}
             <Link to="/redefinir-senha" className="font-medium text-primary hover:underline">
-              Abrir definição de nova senha
+              Esqueci minha senha
             </Link>
           </p>
         </div>

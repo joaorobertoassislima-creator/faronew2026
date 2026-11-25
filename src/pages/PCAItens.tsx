@@ -1072,33 +1072,10 @@ export default function PCAItens() {
                                             </div>
                                           )}
                                           </div>
-                                          <div className="space-y-2 border-t border-border p-3">
-                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                              Nível 4 - Itens código contrato
-                                            </p>
-                                            {(itensContratoPorClasse[classe.id] ??
-                                              []).length === 0 ? (
-                                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                                <p className="text-xs text-muted-foreground">
-                                                  Nenhum item código contrato nesta
-                                                  classe/grupo.
-                                                </p>
-                                                {podeEditar && (
-                                                  <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    title="Adicionar item código contrato"
-                                                    onClick={() =>
-                                                      abrirItemContrato(classe.id)
-                                                    }
-                                                  >
-                                                    <Plus className="h-4 w-4" />
-                                                    Adicionar item código contrato
-                                                  </Button>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              (itensContratoPorClasse[classe.id] ??
+                                          {(itensContratoPorClasse[classe.id] ??
+                                            []).length > 0 && (
+                                            <div className="space-y-2 border-t border-border p-3">
+                                              {(itensContratoPorClasse[classe.id] ??
                                                 []).map((item) => {
                                                   const contratoVinculado =
                                                     item.contrato_id
@@ -1189,8 +1166,9 @@ export default function PCAItens() {
                                                     </div>
                                                   );
                                                 })
-                                            )}
-                                          </div>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                       ))
                                     )}

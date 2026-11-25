@@ -7,6 +7,7 @@ import RedefinirSenha from "@/pages/RedefinirSenha";
 import Home from "@/pages/Home";
 import Contratos from "@/pages/Contratos";
 import ContratoDetalhe from "@/pages/ContratoDetalhe";
+import Perfil from "@/pages/Perfil";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -95,6 +96,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <ContratoDetalhe />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <RotaProtegida>
+            <Perfil />
           </RotaProtegida>
         }
       />

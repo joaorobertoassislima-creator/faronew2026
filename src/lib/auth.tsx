@@ -29,6 +29,7 @@ export interface Perfil {
   setor: string | null;
   telefone: string | null;
   ativo: boolean;
+  avatar_url: string | null;
 }
 
 interface AuthContextValue {
@@ -44,6 +45,14 @@ interface AuthContextValue {
   redefinirSenha: (novaSenha: string) => Promise<string | null>;
   possuiPapel: (papel: Papel) => boolean;
   ehAdministrador: boolean;
+  atualizarPerfil: (dados: {
+    nome: string;
+    matricula: string | null;
+    cargo: string | null;
+    setor: string | null;
+    telefone: string | null;
+    avatar_url: string | null;
+  }) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -59,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const carregarDadosUsuario = useCallback(async (userId: string) => {
     const { data: dadosPerfil, error: erroP } = await supabase
       .from("profiles")
-      .select("id, nome, matricula, cargo, setor, telefone, ativo")
+      .select("id, nome, matricula, cargo, setor, telefone, ativo, avatar_url")
       .eq("id", userId)
       .maybeSingle();
 
@@ -174,6 +183,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
+  const atualizarPerfil = useCallback(
+    async (dados: {
+      nome: string;
+      matricula: string | null;
+      cargo: string | null;
+      setor: string | null;
+      telefone: string | null;
+      avatar_url: string | null;
+    }) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(dados)
+        .eq("id", usuario?.id ?? "")
+        .select("id, nome, matricula, cargo, setor, telefone, ativo, avatar_url")
+        .maybeSingle();
+
+      if (error) return error.message;
+      if (data) setPerfil(data as Perfil);
+      return null;
+    },
+    [usuario?.id],
+  );
+
   const possuiPapel = useCallback(
     (papel: Papel) => papeis.includes(papel),
     [papeis],
@@ -193,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       redefinirSenha,
       possuiPapel,
       ehAdministrador: papeis.includes("administrador"),
+      atualizarPerfil,
     }),
     [
       usuario,
@@ -206,6 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       recuperarSenha,
       redefinirSenha,
       possuiPapel,
+      atualizarPerfil,
     ],
   );
 

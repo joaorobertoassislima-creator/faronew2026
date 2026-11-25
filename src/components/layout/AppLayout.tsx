@@ -15,6 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth, type Papel } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,13 @@ const ITENS_MENU: ItemMenu[] = [
   },
 ];
 
+function iniciaisPerfil(nome: string) {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "?";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
 function itensVisiveis(papeis: Papel[]) {
   return ITENS_MENU.filter(
     (item) => !item.papeis || item.papeis.some((papel) => papeis.includes(papel)),
@@ -152,12 +160,31 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const perfilRodape = (
     <div className="border-t border-border p-3">
-      <div className="mb-2 px-3">
-        <p className="truncate text-sm font-semibold">{perfil?.nome ?? "Usuário"}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {perfil?.cargo ?? perfil?.setor ?? "Sem cargo informado"}
-        </p>
-      </div>
+      <Link
+        to="/perfil"
+        className="mb-2 flex items-center gap-3 rounded-md px-3 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Editar meu perfil"
+      >
+        {perfil?.avatar_url ? (
+          <img
+            src={perfil.avatar_url}
+            alt={`Foto de ${perfil.nome}`}
+            className="h-9 w-9 shrink-0 rounded-full border border-border object-cover"
+          />
+        ) : (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+            {iniciaisPerfil(perfil?.nome ?? "")}
+          </span>
+        )}
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold">
+            {perfil?.nome ?? "Usuário"}
+          </span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {perfil?.cargo ?? perfil?.setor ?? "Sem cargo informado"}
+          </span>
+        </span>
+      </Link>
       <Button
         variant="outline"
         size="sm"

@@ -175,17 +175,22 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         className="flex flex-1 items-center gap-3 rounded-md px-3 py-1.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         title="Abrir menu do usuário"
       >
-        {perfil?.avatar_url ? (
-          <img
-            src={perfil.avatar_url}
-            alt={`Foto de ${perfil.nome}`}
-            className="h-9 w-9 shrink-0 rounded-full border border-border object-cover"
-          />
-        ) : (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-            {iniciaisPerfil(perfil?.nome ?? "")}
-          </span>
-        )}
+        <span className="relative shrink-0">
+          {perfil?.avatar_url ? (
+            <img
+              src={perfil.avatar_url}
+              alt={`Foto de ${perfil.nome}`}
+              className="h-9 w-9 rounded-full border border-border object-cover"
+            />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+              {iniciaisPerfil(perfil?.nome ?? "")}
+            </span>
+          )}
+          {naoLidas > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
+          )}
+        </span>
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold">
             {perfil?.nome ?? "Usuário"}
@@ -201,22 +206,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           )}
         />
       </button>
-        <Link
-          to="/notificacoes"
-          onClick={(evento) => evento.stopPropagation()}
-          aria-label="Abrir central de notificações"
-          title={
-            naoLidas > 0
-              ? `${naoLidas} notificação${naoLidas > 1 ? "ões" : ""} não lida${naoLidas > 1 ? "s" : ""}`
-              : "Central de notificações"
-          }
-          className="relative shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <Bell className="h-4 w-4" />
-          {naoLidas > 0 && (
-            <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
-          )}
-        </Link>
       </div>
 
       {perfilExpandido && (
@@ -234,18 +223,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onClick={() => setPerfilExpandido(false)}
             className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            <span className="relative shrink-0">
-              <Bell className="h-4 w-4" />
-              {naoLidas > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
-              )}
-            </span>
-            Notificações
+            <Bell className="h-4 w-4 shrink-0" />
             {naoLidas > 0 && (
-              <span className="ml-auto rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+              <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
                 {naoLidas}
               </span>
             )}
+            Notificações
           </Link>
           <button
             type="button"

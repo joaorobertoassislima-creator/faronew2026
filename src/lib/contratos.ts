@@ -26,6 +26,8 @@ export interface Contrato {
   numero: string;
   objeto: string;
   fornecedor: string;
+  /** Fornecedor vinculado (cadastro de fornecedores). */
+  fornecedor_id: string | null;
   cnpj: string | null;
   modalidade: string;
   processo: string | null;

@@ -22,6 +22,8 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Dialog from "@/components/ui/dialog";
+import ModalPesquisaFornecedor from "@/components/fornecedores/ModalPesquisaFornecedor";
+import type { Fornecedor } from "@/lib/fornecedores";
 import { useToast } from "@/components/ui/toast";
 import { dataParaIso, formatarDataISO, formatarMoeda, isoParaDataBr } from "@/lib/format";
 import { traduzirErroSupabase } from "@/lib/erros";
@@ -40,6 +42,7 @@ interface Formulario {
   numero: string;
   objeto: string;
   fornecedor: string;
+  fornecedor_id: string;
   cnpj: string;
   modalidade: string;
   processo: string;
@@ -57,6 +60,7 @@ const FORMULARIO_VAZIO: Formulario = {
   numero: "",
   objeto: "",
   fornecedor: "",
+  fornecedor_id: "",
   cnpj: "",
   modalidade: MODALIDADES[0],
   processo: "",
@@ -92,6 +96,8 @@ export default function Contratos() {
   const [formulario, setFormulario] = useState<Formulario>(FORMULARIO_VAZIO);
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
+
+  const [pesquisaFornecedorAberta, setPesquisaFornecedorAberta] = useState(false);
 
   const [excluindo, setExcluindo] = useState<Contrato | null>(null);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
@@ -208,6 +214,7 @@ export default function Contratos() {
       numero: contrato.numero,
       objeto: contrato.objeto,
       fornecedor: contrato.fornecedor,
+      fornecedor_id: contrato.fornecedor_id ?? "",
       cnpj: contrato.cnpj ?? "",
       modalidade: contrato.modalidade,
       processo: contrato.processo ?? "",
@@ -286,6 +293,7 @@ export default function Contratos() {
       numero: formulario.numero.trim(),
       objeto: formulario.objeto.trim(),
       fornecedor: formulario.fornecedor.trim(),
+      fornecedor_id: formulario.fornecedor_id || null,
       cnpj: formulario.cnpj.trim() || null,
       modalidade: formulario.modalidade,
       processo: formulario.processo.trim() || null,
@@ -739,13 +747,24 @@ export default function Contratos() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="fornecedor">Fornecedor *</Label>
-              <Input
-                id="fornecedor"
-                className="mt-1"
-                value={formulario.fornecedor}
-                onChange={(evento) => alterar("fornecedor", evento.target.value)}
-                placeholder="Razão social do fornecedor"
-              />
+              <div className="mt-1 flex gap-2">
+                <Input
+                  id="fornecedor"
+                  readOnly
+                  value={formulario.fornecedor}
+                  placeholder="Selecione o fornecedor na pesquisa"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Pesquisar fornecedor"
+                  title="Pesquisar fornecedor"
+                  onClick={() => setPesquisaFornecedorAberta(true)}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div>
               <Label htmlFor="cnpj">CNPJ</Label>
@@ -893,6 +912,19 @@ export default function Contratos() {
           </div>
         </div>
       </Dialog>
+
+      <ModalPesquisaFornecedor
+        aberto={pesquisaFornecedorAberta}
+        aoFechar={() => setPesquisaFornecedorAberta(false)}
+        aoSelecionar={(fornecedor: Fornecedor) => {
+          setFormulario((atual) => ({
+            ...atual,
+            fornecedor: fornecedor.razao_social,
+            fornecedor_id: fornecedor.id,
+            cnpj: fornecedor.cnpj ?? atual.cnpj,
+          }));
+        }}
+      />
 
       <Dialog
         aberto={Boolean(excluindo)}

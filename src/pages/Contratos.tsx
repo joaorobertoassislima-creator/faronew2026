@@ -41,6 +41,7 @@ interface Formulario {
   modalidade: string;
   processo: string;
   valor: string;
+  valor_original: string;
   data_inicio: string;
   data_fim: string;
   vigencia_original_inicio: string;
@@ -57,6 +58,7 @@ const FORMULARIO_VAZIO: Formulario = {
   modalidade: MODALIDADES[0],
   processo: "",
   valor: "",
+  valor_original: "",
   data_inicio: "",
   data_fim: "",
   vigencia_original_inicio: "",
@@ -179,6 +181,10 @@ export default function Contratos() {
       modalidade: contrato.modalidade,
       processo: contrato.processo ?? "",
       valor: contrato.valor ? String(contrato.valor).replace(".", ",") : "",
+      valor_original:
+        contrato.valor_original !== null && contrato.valor_original !== undefined
+          ? String(contrato.valor_original).replace(".", ",")
+          : "",
       data_inicio: isoParaDataBr(contrato.data_inicio),
       data_fim: isoParaDataBr(contrato.data_fim),
       vigencia_original_inicio: isoParaDataBr(contrato.vigencia_original_inicio),
@@ -253,6 +259,14 @@ export default function Contratos() {
       modalidade: formulario.modalidade,
       processo: formulario.processo.trim() || null,
       valor: moedaParaNumero(formulario.valor),
+      // Valor original: na criação assume o valor informado quando não
+      // preenchido; na edição preserva o valor já registrado.
+      valor_original:
+        formulario.valor_original.trim()
+          ? moedaParaNumero(formulario.valor_original)
+          : editando
+            ? (editando.valor_original ?? moedaParaNumero(formulario.valor))
+            : moedaParaNumero(formulario.valor),
       data_inicio: inicioIso,
       data_fim: fimIso,
       // Vigência original: na criação assume a vigência informada quando não
@@ -752,6 +766,26 @@ export default function Contratos() {
                 value={formulario.data_fim}
                 onChange={(evento) => alterar("data_fim", evento.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="valor-original">Valor original (R$)</Label>
+              <Input
+                id="valor-original"
+                className="mt-1"
+                inputMode="decimal"
+                value={formulario.valor_original}
+                onChange={(evento) => alterar("valor_original", evento.target.value)}
+                placeholder="0,00"
+              />
+            </div>
+            <div className="flex items-end">
+              <p className="pb-2 text-xs text-muted-foreground">
+                Campo informativo: registra o valor inicial do contrato. Não é alterado
+                pelos aditivos e não interfere nos cálculos de status e vencimento.
+              </p>
             </div>
           </div>
 

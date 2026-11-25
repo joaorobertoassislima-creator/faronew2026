@@ -23,6 +23,7 @@ import {
 } from "@/lib/format";
 import {
   diasParaVencer,
+  moedaParaNumero,
   rotuloStatus,
   statusEfetivo,
   varianteStatus,
@@ -33,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Dialog from "@/components/ui/dialog";
@@ -78,6 +80,8 @@ export default function ContratoDetalhe() {
     data_aditivo: "",
     data_inicio: "",
     data_fim: "",
+    tipo_valor: "inalterado" as "inalterado" | "acrescimo" | "reducao",
+    valor_aditivo: "",
     observacoes: "",
   });
 
@@ -112,7 +116,8 @@ export default function ContratoDetalhe() {
       .from("aditivos_contrato")
       .select("*")
       .eq("contrato_id", id)
-      .order("data_aditivo", { ascending: true });
+      .order("data_aditivo", { ascending: false })
+      .order("criado_em", { ascending: false });
     if (error) {
       setErro(traduzirErroSupabase(error.message));
       return;
@@ -134,6 +139,8 @@ export default function ContratoDetalhe() {
       data_aditivo: "",
       data_inicio: contrato?.data_inicio ? isoParaDataBr(contrato.data_inicio) : "",
       data_fim: contrato?.data_fim ? isoParaDataBr(contrato.data_fim) : "",
+      tipo_valor: "inalterado",
+      valor_aditivo: "",
       observacoes: "",
     });
     setErroFormulario(null);
@@ -169,6 +176,23 @@ export default function ContratoDetalhe() {
       setErroFormulario("A data de término deve ser posterior à data de início.");
       return;
     }
+    const valorAnterior = Number(contrato.valor ?? 0);
+    let valorNovo = valorAnterior;
+    let tipoValor: "inalterado" | "acrescimo" | "reducao" = "inalterado";
+    if (formulario.tipo_valor !== "inalterado") {
+      const valorAlteracao = moedaParaNumero(formulario.valor_aditivo);
+      if (valorAlteracao <= 0) {
+        setErroFormulario("Informe o valor do aditivo (maior que zero).");
+        return;
+      }
+      tipoValor = formulario.tipo_valor;
+      valorNovo =
+        tipoValor === "acrescimo" ? valorAnterior + valorAlteracao : valorAnterior - valorAlteracao;
+      if (valorNovo < 0) {
+        setErroFormulario("A redução não pode deixar o valor do contrato negativo.");
+        return;
+      }
+    }
 
     setSalvando(true);
     setErroFormulario(null);
@@ -179,6 +203,9 @@ export default function ContratoDetalhe() {
       data_aditivo: dataAditivoIso,
       data_inicio: inicioIso,
       data_fim: fimIso,
+      valor_anterior: valorAnterior,
+      valor_novo: valorNovo,
+      tipo_valor: tipoValor,
       observacoes: formulario.observacoes.trim() || null,
     });
 
@@ -193,6 +220,7 @@ export default function ContratoDetalhe() {
       .update({
         data_inicio: inicioIso ?? contrato.data_inicio,
         data_fim: fimIso,
+        valor: valorNovo,
         status: "vigente",
         atualizado_em: new Date().toISOString(),
       })
@@ -206,7 +234,11 @@ export default function ContratoDetalhe() {
     }
 
     setDialogoAditivo(false);
-    setMensagem("Aditivo registrado e vigência do contrato atualizada.");
+    setMensagem(
+      tipoValor === "inalterado"
+        ? "Aditivo registrado e vigência do contrato atualizada."
+        : "Aditivo registrado, vigência e valor do contrato atualizados.",
+    );
     await carregar();
     await carregarAditivos();
   }
@@ -312,6 +344,14 @@ export default function ContratoDetalhe() {
                   valor={formatarMoeda(Number(contrato.valor ?? 0))}
                 />
                 <Linha
+                  rotulo="Valor original"
+                  valor={
+                    contrato.valor_original !== null && contrato.valor_original !== undefined
+                      ? formatarMoeda(Number(contrato.valor_original))
+                      : "Não informado"
+                  }
+                />
+                <Linha
                   rotulo="Vigência"
                   valor={`${formatarDataISO(contrato.data_inicio)} a ${formatarDataISO(contrato.data_fim)}`}
                   icone={<CalendarDays className="h-3.5 w-3.5" />}
@@ -358,7 +398,8 @@ export default function ContratoDetalhe() {
                   Aditivos
                 </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Prorrogações e alterações de vigência registradas para este contrato.
+                  Prorrogações, alterações de vigência e aditamentos de valor registradas para
+                  este contrato.
                 </p>
               </div>
               {podeEditar && (
@@ -376,7 +417,8 @@ export default function ContratoDetalhe() {
               ) : (
                 <ol className="relative space-y-4 border-l border-border pl-6">
                   {aditivos.map((aditivo, indice) => {
-                    const ehUltimo = indice === aditivos.length - 1;
+                    const ehUltimo =
+                      aditivo.data_fim === contrato.data_fim || indice === 0;
                     const diasAditivo = diasParaVencer(aditivo.data_fim);
                     return (
                       <li key={aditivo.id} className="relative">
@@ -405,6 +447,16 @@ export default function ContratoDetalhe() {
                               {formatarDataISO(aditivo.data_inicio)} a {formatarDataISO(aditivo.data_fim)}
                             </dd>
                           </div>
+                          {aditivo.tipo_valor && aditivo.tipo_valor !== "inalterado" && (
+                            <div className="flex gap-1.5">
+                              <dt>Valor:</dt>
+                              <dd className="text-foreground">
+                                {formatarMoeda(Number(aditivo.valor_anterior ?? 0))} →{" "}
+                                {formatarMoeda(Number(aditivo.valor_novo ?? 0))} (
+                                {aditivo.tipo_valor === "acrescimo" ? "acréscimo" : "redução"})
+                              </dd>
+                            </div>
+                          )}
                           {aditivo.observacoes && (
                             <div className="flex gap-1.5">
                               <dt>Observações:</dt>
@@ -546,6 +598,36 @@ export default function ContratoDetalhe() {
                 placeholder="dd/mm/aaaa"
                 value={formulario.data_fim}
                 onChange={(evento) => alterar("data_fim", evento.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="aditivo-tipo-valor">Alteração de valor</Label>
+              <Select
+                id="aditivo-tipo-valor"
+                className="mt-1"
+                value={formulario.tipo_valor}
+                onChange={(evento) =>
+                  alterar("tipo_valor", evento.target.value as "inalterado" | "acrescimo" | "reducao")
+                }
+              >
+                <option value="inalterado">Manter valor ({formatarMoeda(Number(contrato?.valor ?? 0))})</option>
+                <option value="acrescimo">Acréscimo</option>
+                <option value="reducao">Redução</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="aditivo-valor">Valor do aditivo (R$)</Label>
+              <Input
+                id="aditivo-valor"
+                className="mt-1"
+                inputMode="decimal"
+                disabled={formulario.tipo_valor === "inalterado"}
+                value={formulario.valor_aditivo}
+                onChange={(evento) => alterar("valor_aditivo", evento.target.value)}
+                placeholder="0,00"
               />
             </div>
           </div>

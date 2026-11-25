@@ -30,6 +30,8 @@ export interface Contrato {
   modalidade: string;
   processo: string | null;
   valor: number;
+  /** Valor original, registrado na criação e preservado pelos aditivos. */
+  valor_original: number | null;
   data_inicio: string | null;
   data_fim: string | null;
   /** Vigência original, registrada na criação e preservada pelos aditivos. */
@@ -50,6 +52,9 @@ export interface Aditivo {
   data_aditivo: string;
   data_inicio: string | null;
   data_fim: string;
+  valor_anterior: number | null;
+  valor_novo: number | null;
+  tipo_valor: "inalterado" | "acrescimo" | "reducao" | null;
   observacoes: string | null;
   criado_por: string | null;
   criado_em: string;

@@ -28,6 +28,7 @@ import {
   diasParaVencer,
   moedaParaNumero,
   rotuloStatus,
+  statusEfetivo,
   varianteStatus,
   type Contrato,
 } from "@/lib/contratos";
@@ -127,7 +128,9 @@ export default function Contratos() {
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return contratos.filter((contrato) => {
-      if (filtroStatus !== "todos" && contrato.status !== filtroStatus) return false;
+      if (filtroStatus !== "todos" && statusEfetivo(contrato) !== filtroStatus) {
+        return false;
+      }
       if (filtroVigencia !== "todos") {
         const dias = diasParaVencer(contrato.data_fim);
         if (filtroVigencia === "vigente" && (!dias || dias < 0)) return false;
@@ -143,7 +146,7 @@ export default function Contratos() {
   }, [contratos, busca, filtroStatus, filtroVigencia]);
 
   const totais = useMemo(() => {
-    const vigentes = contratos.filter((c) => c.status === "vigente");
+    const vigentes = contratos.filter((c) => statusEfetivo(c) === "vigente");
     return {
       quantidade: contratos.length,
       valorTotal: contratos.reduce((soma, c) => soma + Number(c.valor ?? 0), 0),
@@ -413,6 +416,7 @@ export default function Contratos() {
               <tbody>
                 {filtrados.map((contrato) => {
                   const dias = diasParaVencer(contrato.data_fim);
+                  const status = statusEfetivo(contrato);
                   return (
                     <tr key={contrato.id} className="border-t border-border align-top">
                       <td className="px-4 py-3 font-medium">{contrato.numero}</td>
@@ -445,8 +449,8 @@ export default function Contratos() {
                         {formatarMoeda(Number(contrato.valor ?? 0))}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={varianteStatus(contrato.status)}>
-                          {rotuloStatus(contrato.status)}
+                        <Badge variant={varianteStatus(status)}>
+                          {rotuloStatus(status)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
@@ -496,6 +500,7 @@ export default function Contratos() {
           <div className="space-y-3 md:hidden">
             {filtrados.map((contrato) => {
               const dias = diasParaVencer(contrato.data_fim);
+              const status = statusEfetivo(contrato);
               return (
                 <Card key={contrato.id}>
                   <CardContent className="space-y-2 p-4">
@@ -504,8 +509,8 @@ export default function Contratos() {
                         <p className="font-semibold">{contrato.numero}</p>
                         <p className="text-sm text-muted-foreground">{contrato.objeto}</p>
                       </div>
-                      <Badge variant={varianteStatus(contrato.status)}>
-                        {rotuloStatus(contrato.status)}
+                      <Badge variant={varianteStatus(status)}>
+                        {rotuloStatus(status)}
                       </Badge>
                     </div>
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">

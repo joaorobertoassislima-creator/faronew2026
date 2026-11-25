@@ -24,6 +24,7 @@ import {
 import {
   diasParaVencer,
   rotuloStatus,
+  statusEfetivo,
   varianteStatus,
   type Aditivo,
   type Contrato,
@@ -211,6 +212,7 @@ export default function ContratoDetalhe() {
   }
 
   const dias = contrato ? diasParaVencer(contrato.data_fim) : null;
+  const status = contrato ? statusEfetivo(contrato) : null;
 
   return (
     <div className="space-y-6">
@@ -278,8 +280,8 @@ export default function ContratoDetalhe() {
                 </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">{contrato.objeto}</p>
               </div>
-              <Badge variant={varianteStatus(contrato.status)}>
-                {rotuloStatus(contrato.status)}
+              <Badge variant={varianteStatus(status ?? contrato.status)}>
+                {rotuloStatus(status ?? contrato.status)}
               </Badge>
             </CardHeader>
             <CardContent>

@@ -86,6 +86,37 @@ export function diasParaVencer(dataFim: string | null): number | null {
   return Math.round((fim.getTime() - hoje.getTime()) / 86400000);
 }
 
+/**
+ * Status efetivo do contrato, considerando a vigência registrada.
+ * "Suspenso" e "rescindido" são decisões administrativas e são preservados;
+ * nos demais casos o que vale é a data: contrato que já terminou é
+ * "encerrado" e contrato que ainda não começou é "planejado".
+ */
+export function statusEfetivo(contrato: {
+  status: string;
+  data_inicio: string | null;
+  data_fim: string | null;
+}): StatusContrato {
+  if (contrato.status === "suspenso" || contrato.status === "rescindido") {
+    return contrato.status;
+  }
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  if (contrato.data_fim) {
+    const fim = new Date(`${contrato.data_fim}T00:00:00`);
+    if (!Number.isNaN(fim.getTime()) && fim.getTime() < hoje.getTime()) {
+      return "encerrado";
+    }
+  }
+  if (contrato.data_inicio) {
+    const inicio = new Date(`${contrato.data_inicio}T00:00:00`);
+    if (!Number.isNaN(inicio.getTime()) && inicio.getTime() > hoje.getTime()) {
+      return "planejado";
+    }
+  }
+  return "vigente";
+}
+
 /** Converte "1.234,56" ou "1234.56" em número. */
 export function moedaParaNumero(valor: string): number {
   const limpo = valor.trim().replace(/[R$\s]/g, "");

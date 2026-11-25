@@ -76,7 +76,7 @@ export default function Perfil() {
       const caminho = `${usuario.id}/avatar-${Date.now()}.${extensao}`;
       const { error } = await supabase.storage
         .from(BUCKET_AVATARES)
-        .upload(caminho, arquivo, { upsert: true, contentType: arquivo.type });
+        .upload(caminho, arquivo, { contentType: arquivo.type, cacheControl: "3600" });
 
       if (error) {
         toast(traduzirErroSupabase(error.message), "erro");

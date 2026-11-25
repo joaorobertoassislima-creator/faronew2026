@@ -1,17 +1,21 @@
 import { useState, type ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
+  Bell,
   Boxes,
+  ChevronDown,
   ClipboardList,
   FileSignature,
   FileText,
   Gavel,
+  HelpCircle,
   Home as HomeIcon,
   LogOut,
   Menu,
   Package,
   ScrollText,
   Truck,
+  User,
   Users,
   X,
 } from "lucide-react";
@@ -112,6 +116,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { perfil, papeis, sair } = useAuth();
   const navegar = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [perfilExpandido, setPerfilExpandido] = useState(false);
   const { toast } = useToast();
 
   const itens = itensVisiveis(papeis);
@@ -160,10 +165,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const perfilRodape = (
     <div className="border-t border-border p-3">
-      <Link
-        to="/perfil"
-        className="mb-2 flex items-center gap-3 rounded-md px-3 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        title="Editar meu perfil"
+      <button
+        type="button"
+        onClick={() => setPerfilExpandido((v) => !v)}
+        aria-expanded={perfilExpandido}
+        className="flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Abrir menu do usuário"
       >
         {perfil?.avatar_url ? (
           <img
@@ -184,20 +191,61 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {perfil?.cargo ?? perfil?.setor ?? "Sem cargo informado"}
           </span>
         </span>
-      </Link>
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full justify-start gap-2"
-        onClick={async () => {
-          await sair();
-          toast("Sessão encerrada com sucesso.", "info");
-          navegar("/login");
-        }}
-      >
-        <LogOut className="h-4 w-4" />
-        Sair do sistema
-      </Button>
+        <ChevronDown
+          className={cn(
+            "ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            perfilExpandido && "rotate-180",
+          )}
+        />
+      </button>
+
+      {perfilExpandido && (
+        <div className="mt-2 flex flex-col gap-1">
+          <Link
+            to="/perfil"
+            onClick={() => setPerfilExpandido(false)}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <User className="h-4 w-4 shrink-0" />
+            Meu Perfil
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setPerfilExpandido(false);
+              toast("Notificações: módulo em construção.", "info");
+            }}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Bell className="h-4 w-4 shrink-0" />
+            Notificações
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPerfilExpandido(false);
+              toast("Ajuda: módulo em construção.", "info");
+            }}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <HelpCircle className="h-4 w-4 shrink-0" />
+            Ajuda
+          </button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-1 w-full justify-start gap-2"
+            onClick={async () => {
+              await sair();
+              toast("Sessão encerrada com sucesso.", "info");
+              navegar("/login");
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            Sair do Sistema
+          </Button>
+        </div>
+      )}
     </div>
   );
 

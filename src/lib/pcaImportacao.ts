@@ -129,19 +129,88 @@ export function parsearCsv(texto: string, separador: string): string[][] {
 }
 
 /** Descodifica o arquivo aceitando UTF-8 (com ou sem BOM) e Latin-1. */
+/** Reinterpreta um texto lido como Latin-1 como se fossem bytes UTF-8 (mojibake). */
+function reinterpretarComoUtf8(textoLatin1: string): string | null {
+  const bytes = new Uint8Array(textoLatin1.length);
+  for (let indice = 0; indice < textoLatin1.length; indice += 1) {
+    const codigo = textoLatin1.charCodeAt(indice);
+    if (codigo > 255) return null;
+    bytes[indice] = codigo;
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** Quantifica caracteres suspeitos (substituição ou mojibake) em um texto. */
+function contarSuspeitos(texto: string): number {
+  const substituicoes = (texto.match(/\uFFFD/g) ?? []).length;
+  const mojibake = (texto.match(/[ÃÂ][\u0080-\u00BF]/g) ?? []).length;
+  return substituicoes * 4 + mojibake;
+}
+
+/**
+ * Descodifica o arquivo detectando a codificação real: UTF-8 (com ou sem BOM),
+ * UTF-16 (BOM) e Windows-1252/ISO-8859-1, corrigindo também arquivos UTF-8
+ * que foram salvos com acentos já convertidos (Ã§, Ã£, ...).
+ */
 export function decodificarArquivo(conteudo: ArrayBuffer): string {
-  let texto = new TextDecoder("utf-8").decode(conteudo);
-  if (/[ÃÂ]/.test(texto)) {
+  const bytes = new Uint8Array(conteudo);
+
+  // UTF-16 com BOM
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) {
     try {
-      const alternativa = new TextDecoder("windows-1252").decode(conteudo);
-      if (/[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]/.test(alternativa)) {
-        texto = alternativa;
-      }
+      return new TextDecoder("utf-16le").decode(conteudo).replace(/^\uFEFF/, "");
     } catch {
-      // mantém o conteúdo original
+      // segue para as demais tentativas
     }
   }
-  return texto.replace(/^\uFEFF/, "");
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) {
+    try {
+      return new TextDecoder("utf-16be").decode(conteudo).replace(/^\uFEFF/, "");
+    } catch {
+      // segue para as demais tentativas
+    }
+  }
+
+  // UTF-8 válido (a maioria dos arquivos)
+  try {
+    const utf8 = new TextDecoder("utf-8", { fatal: true }).decode(conteudo);
+    return utf8.replace(/^\uFEFF/, "");
+  } catch {
+    // arquivo não é UTF-8 puro, tenta Latin-1/Windows-1252
+  }
+
+  const candidatos: string[] = [];
+  for (const codificacao of ["windows-1252", "iso-8859-1", "latin1"]) {
+    try {
+      const decodificado = new TextDecoder(codificacao).decode(conteudo);
+      candidatos.push(decodificado);
+      const reinterpretado = reinterpretarComoUtf8(decodificado);
+      if (reinterpretado) candidatos.push(reinterpretado);
+    } catch {
+      // codificação não suportada neste navegador
+    }
+  }
+
+  if (candidatos.length > 0) {
+    candidatos.sort((a, b) => contarSuspeitos(a) - contarSuspeitos(b));
+    return candidatos[0].replace(/^\uFEFF/, "");
+  }
+
+  return new TextDecoder("utf-8").decode(conteudo).replace(/^\uFEFF/, "");
+}
+
+/** Normaliza o cabeçalho: minúsculas, sem acentos e apenas letras/números. */
+function normalizarCabecalho(coluna: string): string {
+  return coluna
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 /** Detecta o separador do CSV a partir da linha de cabeçalho. */
@@ -155,7 +224,7 @@ export function analisarArquivoPCA(texto: string): AnaliseArquivo {
   const primeiraLinha = limpo.split(/\r?\n/)[0] ?? "";
   const separador = detectarSeparador(primeiraLinha);
   const todas = parsearCsv(limpo, separador);
-  const cabecalhos = (todas[0] ?? []).map((coluna) => coluna.trim().toLowerCase());
+  const cabecalhos = (todas[0] ?? []).map((coluna) => normalizarCabecalho(coluna.trim()));
 
   const colunasFaltando = COLUNAS_IMPORTACAO.filter(
     (coluna) => coluna.obrigatoria && !cabecalhos.includes(coluna.chave),

@@ -1,14 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-/** Máscara de valor em reais (1.234,56) aplicada enquanto o usuário digita. */
-function mascaraValor(texto: string): string {
-  const digitos = texto.replace(/\D/g, "").slice(0, 13);
-  if (digitos.length === 0) return "";
-  const inteiro = digitos.slice(0, Math.max(digitos.length - 2, 1));
-  const centavos = digitos.length > 2 ? digitos.slice(-2) : "";
-  const inteiroFormatado = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return centavos ? `${inteiroFormatado},${centavos}` : inteiroFormatado;
-}
 import {
   ChevronDown,
   ChevronRight,
@@ -84,6 +74,16 @@ interface FormularioClasse {
   especificacao: string;
   justificativa: string;
   observacoes: string;
+}
+
+/** Máscara de valor em reais (1.234,56) aplicada enquanto o usuário digita. */
+function mascaraValor(texto: string): string {
+  const digitos = texto.replace(/\D/g, "").slice(0, 13);
+  if (digitos.length === 0) return "";
+  const inteiro = digitos.slice(0, Math.max(digitos.length - 2, 1));
+  const centavos = digitos.length > 2 ? digitos.slice(-2) : "";
+  const inteiroFormatado = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return centavos ? `${inteiroFormatado},${centavos}` : inteiroFormatado;
 }
 
 /** Próximo código de item geral no formato X.00.00. */
@@ -1165,8 +1165,7 @@ export default function PCAItens() {
                                                       )}
                                                     </div>
                                                   );
-                                                })
-                                              )}
+                                                })}
                                             </div>
                                           )}
                                         </div>

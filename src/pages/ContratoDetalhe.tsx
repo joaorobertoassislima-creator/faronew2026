@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   CalendarDays,
   FileSignature,
   Hash,
@@ -73,6 +74,7 @@ export default function ContratoDetalhe() {
   const [aditivos, setAditivos] = useState<Aditivo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [paginaAditivos, setPaginaAditivos] = useState(0);
 
   const [dialogoAditivo, setDialogoAditivo] = useState(false);
   const [aditivoEditando, setAditivoEditando] = useState<Aditivo | null>(null);
@@ -88,6 +90,17 @@ export default function ContratoDetalhe() {
     valor_aditivo: "",
     observacoes: "",
   });
+  const ADITIVOS_POR_PAGINA = 3;
+  const totalPaginasAditivos = Math.max(
+    1,
+    Math.ceil(aditivos.length / ADITIVOS_POR_PAGINA),
+  );
+  const paginaAditivosAtual = Math.min(paginaAditivos, totalPaginasAditivos - 1);
+  const aditivosDaPagina = aditivos.slice(
+    paginaAditivosAtual * ADITIVOS_POR_PAGINA,
+    paginaAditivosAtual * ADITIVOS_POR_PAGINA + ADITIVOS_POR_PAGINA,
+  );
+
   const [formulario, setFormulario] = useState({
     numero: "",
     data_aditivo: "",
@@ -136,6 +149,7 @@ export default function ContratoDetalhe() {
       return;
     }
     setAditivos((data as Aditivo[]) ?? []);
+    setPaginaAditivos(0);
   }, [id]);
 
   useEffect(() => {
@@ -599,7 +613,9 @@ export default function ContratoDetalhe() {
                 </p>
               ) : (
                 <ol className="relative space-y-4 border-l border-border pl-6">
-                  {aditivos.map((aditivo, indice) => {
+                  {aditivosDaPagina.map((aditivo, indicePagina) => {
+                    const indice =
+                      paginaAditivosAtual * ADITIVOS_POR_PAGINA + indicePagina;
                     const ehUltimo =
                       aditivo.data_fim === contrato.data_fim || indice === 0;
                     const diasAditivo = diasParaVencer(aditivo.data_fim);
@@ -696,6 +712,34 @@ export default function ContratoDetalhe() {
                     );
                   })}
                 </ol>
+              )}
+              {aditivos.length > ADITIVOS_POR_PAGINA && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                  <span className="text-xs text-muted-foreground">
+                    Página {paginaAditivosAtual + 1} de {totalPaginasAditivos} · {aditivos.length}{" "}
+                    aditivo(s)
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={paginaAditivosAtual === 0}
+                      onClick={() => setPaginaAditivos(paginaAditivosAtual - 1)}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Anteriores
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={paginaAditivosAtual >= totalPaginasAditivos - 1}
+                      onClick={() => setPaginaAditivos(paginaAditivosAtual + 1)}
+                    >
+                      Próximos
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase, supabaseConfigured } from "@/lib/supabase";
+import { supabase, supabaseConfigurado } from "@/lib/supabase";
 
 export const PAPEIS = [
   "administrador",
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [carregarDadosUsuario]);
 
   const entrar = useCallback(async (email: string, senha: string) => {
-    if (!supabaseConfigured) {
+    if (!supabaseConfigurado()) {
       return "Conexão com o Supabase não configurada. Verifique as variáveis de ambiente do projeto.";
     }
     const { error } = await supabase.auth.signInWithPassword({
@@ -158,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recuperarSenha = useCallback(async (email: string) => {
-    if (!supabaseConfigured) {
+    if (!supabaseConfigurado()) {
       return "Conexão com o Supabase não configurada. Verifique as variáveis de ambiente do projeto.";
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {

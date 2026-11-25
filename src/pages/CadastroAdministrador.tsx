@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { supabase, supabaseConfigured } from "@/lib/supabase";
+import { supabase, supabaseConfigurado } from "@/lib/supabase";
+import { traduzirErroSupabase } from "@/lib/erros";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,7 +60,7 @@ export default function CadastroAdministrador() {
       setErro("Informe o código de instalação do SisPatri.");
       return;
     }
-    if (!supabaseConfigured) {
+    if (!supabaseConfigurado()) {
       setErro("Conexão com o Supabase não configurada. Verifique as variáveis de ambiente do projeto.");
       return;
     }
@@ -80,7 +81,9 @@ export default function CadastroAdministrador() {
       });
 
       if (error) {
-        setErro(error.message ?? "Não foi possível concluir o cadastro. Tente novamente.");
+        setErro(
+          traduzirErroSupabase(error.message ?? "Não foi possível concluir o cadastro. Tente novamente."),
+        );
         return;
       }
 

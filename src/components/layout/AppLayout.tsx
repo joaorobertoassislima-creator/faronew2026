@@ -164,7 +164,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   );
 
   const perfilRodape = (
-    <div className="border-t border-border p-3">
+    <div className="relative border-t border-border p-3">
       <button
         type="button"
         onClick={() => setPerfilExpandido((v) => !v)}
@@ -200,7 +200,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </button>
 
       {perfilExpandido && (
-        <div className="mt-2 flex flex-col gap-1">
+        <div className="fixed bottom-24 left-3 right-3 z-[60] flex flex-col gap-1 rounded-lg border border-border bg-card p-2 shadow-xl lg:absolute lg:bottom-2 lg:left-full lg:right-auto lg:z-50 lg:ml-2 lg:w-56">
           <Link
             to="/perfil"
             onClick={() => setPerfilExpandido(false)}

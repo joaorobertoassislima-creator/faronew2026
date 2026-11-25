@@ -34,6 +34,8 @@ import {
   enderecoCompleto,
   formatarCep,
   formatarDocumento,
+  mascaraCep,
+  mascaraDocumento,
   rotuloStatusFornecedor,
   somenteDigitos,
   varianteStatusFornecedor,
@@ -121,6 +123,7 @@ export default function Fornecedores() {
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
 
+  const [buscandoCnpj, setBuscandoCnpj] = useState(false);
   const [excluindo, setExcluindo] = useState<Fornecedor | null>(null);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
   const [pagina, setPagina] = useState(0);
@@ -329,6 +332,63 @@ export default function Fornecedores() {
         : "Fornecedor registrado com sucesso.",
     );
     await carregar();
+  }
+
+  async function buscarDadosCnpj() {
+    const digitos = somenteDigitos(formulario.cnpj);
+    if (digitos.length !== 14) {
+      setErroFormulario("Informe um CNPJ com 14 dígitos para consultar os dados.");
+      return;
+    }
+
+    setBuscandoCnpj(true);
+    setErroFormulario(null);
+    try {
+      const resposta = await fetch(`https://api.opencnpj.org/${digitos}`);
+      if (!resposta.ok) {
+        throw new Error("falha na consulta");
+      }
+      const json = await resposta.json();
+      const empresa = (json?.empresa ?? json ?? {}) as Record<string, unknown>;
+
+      const texto = (chave: string): string => {
+        const valor = empresa[chave];
+        return typeof valor === "string" ? valor.trim() : "";
+      };
+
+      const naturezaApi = texto("natureza_juridica") || texto("natureza_social");
+      const natureza =
+        NATUREZAS_SOCIAIS.find((item) =>
+          naturezaApi.toLowerCase().includes(item.toLowerCase()),
+        ) ?? "";
+
+      setFormulario((atual) => ({
+        ...atual,
+        razao_social: texto("razao_social") || atual.razao_social,
+        nome_fantasia: texto("nome_fantasia") || atual.nome_fantasia,
+        inscricao_estadual: texto("inscricao_estadual") || atual.inscricao_estadual,
+        natureza_social: natureza || atual.natureza_social,
+        cep: mascaraCep(texto("cep")) || atual.cep,
+        logradouro: texto("logradouro") || atual.logradouro,
+        numero: texto("numero") || atual.numero,
+        complemento: texto("complemento") || atual.complemento,
+        bairro: texto("bairro") || atual.bairro,
+        cidade: texto("municipio") || texto("cidade") || atual.cidade,
+        uf: (texto("uf") || atual.uf).toUpperCase(),
+        telefone: texto("telefone") || atual.telefone,
+        email: texto("email") || atual.email,
+        site: texto("site") || atual.site,
+      }));
+
+      toast("Dados preenchidos. Você pode editá-los antes de salvar.");
+    } catch {
+      const mensagem =
+        "Não foi possível consultar o CNPJ. Verifique o número e tente novamente.";
+      setErroFormulario(mensagem);
+      toast(mensagem, "erro");
+    } finally {
+      setBuscandoCnpj(false);
+    }
   }
 
   async function confirmarExclusao() {
@@ -726,6 +786,48 @@ export default function Fornecedores() {
             </div>
           )}
 
+          <section className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <Search className="h-4 w-4 text-primary" />
+              CNPJ
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Informe o CNPJ e clique na lupa para buscar os dados da empresa
+              automaticamente. Os campos preenchidos podem ser editados.
+            </p>
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <Label htmlFor="cnpj">CNPJ *</Label>
+                <Input
+                  id="cnpj"
+                  className="mt-1"
+                  inputMode="numeric"
+                  value={formulario.cnpj}
+                  onChange={(evento) =>
+                    alterar("cnpj", mascaraDocumento(evento.target.value))
+                  }
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="mt-7"
+                title="Buscar dados pelo CNPJ"
+                aria-label="Buscar dados pelo CNPJ"
+                disabled={buscandoCnpj}
+                onClick={() => void buscarDadosCnpj()}
+              >
+                {buscandoCnpj ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </section>
+
           <section className="space-y-3">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               <Building2 className="h-4 w-4 text-primary" />
@@ -753,18 +855,7 @@ export default function Fornecedores() {
                 />
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <Label htmlFor="cnpj">CNPJ / CPF</Label>
-                <Input
-                  id="cnpj"
-                  className="mt-1"
-                  inputMode="numeric"
-                  value={formulario.cnpj}
-                  onChange={(evento) => alterar("cnpj", evento.target.value)}
-                  placeholder="00.000.000/0000-00"
-                />
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="inscricao-estadual">Inscrição estadual</Label>
                 <Input

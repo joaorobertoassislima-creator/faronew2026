@@ -95,6 +95,29 @@ export function formatarDocumento(valor: string | null | undefined): string {
   return valor ?? "—";
 }
 
+/** Aplica a máscara de CNPJ enquanto o usuário digita (aceita valores parciais). */
+export function mascaraDocumento(valor: string): string {
+  const digitos = somenteDigitos(valor).slice(0, 14);
+  const p1 = digitos.slice(0, 2);
+  const p2 = digitos.slice(2, 5);
+  const p3 = digitos.slice(5, 8);
+  const p4 = digitos.slice(8, 12);
+  const p5 = digitos.slice(12, 14);
+  let resultado = p1;
+  if (p2) resultado += `.${p2}`;
+  if (p3) resultado += `.${p3}`;
+  if (p4) resultado += `/${p4}`;
+  if (p5) resultado += `-${p5}`;
+  return resultado;
+}
+
+/** Aplica a máscara de CEP enquanto o usuário digita. */
+export function mascaraCep(valor: string): string {
+  const digitos = somenteDigitos(valor).slice(0, 8);
+  if (digitos.length <= 5) return digitos;
+  return `${digitos.slice(0, 5)}-${digitos.slice(5)}`;
+}
+
 /** Formata CEP: 00000-000. */
 export function formatarCep(valor: string | null | undefined): string {
   const digitos = somenteDigitos(valor);

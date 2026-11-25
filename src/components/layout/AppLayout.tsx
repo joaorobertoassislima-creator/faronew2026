@@ -64,6 +64,12 @@ const ITENS_MENU: ItemMenu[] = [
     papeis: ["administrador", "agente_compras", "auditor"],
   },
   {
+    titulo: "PCA - Plano de Contratações",
+    rota: "/pca",
+    icone: ClipboardList,
+    papeis: ["administrador", "agente_compras", "auditor"],
+  },
+  {
     titulo: "Contratos",
     rota: "/contratos",
     icone: FileSignature,

@@ -8,6 +8,8 @@ import Home from "@/pages/Home";
 import Contratos from "@/pages/Contratos";
 import ContratoDetalhe from "@/pages/ContratoDetalhe";
 import Fornecedores from "@/pages/Fornecedores";
+import PCA from "@/pages/PCA";
+import PCAItens from "@/pages/PCAItens";
 import Perfil from "@/pages/Perfil";
 import Notificacoes from "@/pages/Notificacoes";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
@@ -108,6 +110,22 @@ export default function App() {
         element={
           <RotaProtegida>
             <Fornecedores />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/pca"
+        element={
+          <RotaProtegida>
+            <PCA />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/pca/:catalogoId/itens"
+        element={
+          <RotaProtegida>
+            <PCAItens />
           </RotaProtegida>
         }
       />

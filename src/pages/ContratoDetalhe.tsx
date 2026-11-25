@@ -16,8 +16,8 @@ import { useAuth } from "@/lib/auth";
 import { traduzirErroSupabase } from "@/lib/erros";
 import {
   dataParaIso,
-  formatarData,
   formatarDataHora,
+  formatarDataISO,
   formatarMoeda,
   isoParaDataBr,
 } from "@/lib/format";
@@ -311,7 +311,7 @@ export default function ContratoDetalhe() {
                 />
                 <Linha
                   rotulo="Vigência"
-                  valor={`${formatarData(contrato.data_inicio)} a ${formatarData(contrato.data_fim)}`}
+                  valor={`${formatarDataISO(contrato.data_inicio)} a ${formatarDataISO(contrato.data_fim)}`}
                   icone={<CalendarDays className="h-3.5 w-3.5" />}
                 />
               </dl>
@@ -386,12 +386,12 @@ export default function ContratoDetalhe() {
                         <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
                           <div className="flex gap-1.5">
                             <dt>Data do aditivo:</dt>
-                            <dd className="text-foreground">{formatarData(aditivo.data_aditivo)}</dd>
+                            <dd className="text-foreground">{formatarDataISO(aditivo.data_aditivo)}</dd>
                           </div>
                           <div className="flex gap-1.5">
                             <dt>Nova vigência:</dt>
                             <dd className="text-foreground">
-                              {formatarData(aditivo.data_inicio)} a {formatarData(aditivo.data_fim)}
+                              {formatarDataISO(aditivo.data_inicio)} a {formatarDataISO(aditivo.data_fim)}
                             </dd>
                           </div>
                           {aditivo.observacoes && (

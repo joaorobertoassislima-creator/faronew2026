@@ -10,6 +10,18 @@ export function formatarData(valor: string | Date | null | undefined): string {
   });
 }
 
+/**
+ * Formata uma data que vem do banco no formato "aaaa-mm-dd" (sem fuso horário).
+ * Evita o deslocamento de um dia que ocorre ao converter para Date (UTC).
+ */
+export function formatarDataISO(valor: string | null | undefined): string {
+  if (!valor) return "—";
+  const partes = valor.slice(0, 10).split("-");
+  if (partes.length !== 3) return "—";
+  const [ano, mes, dia] = partes;
+  return `${dia}/${mes}/${ano}`;
+}
+
 /** Formata data e hora no padrão brasileiro: dd/mm/aaaa às HH:mm */
 export function formatarDataHora(valor: string | Date | null | undefined): string {
   if (!valor) return "—";

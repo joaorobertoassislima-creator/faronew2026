@@ -20,7 +20,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Dialog from "@/components/ui/dialog";
-import { dataParaIso, formatarData, formatarMoeda, isoParaDataBr } from "@/lib/format";
+import { dataParaIso, formatarDataISO, formatarMoeda, isoParaDataBr } from "@/lib/format";
 import { traduzirErroSupabase } from "@/lib/erros";
 import {
   MODALIDADES,
@@ -433,7 +433,7 @@ export default function Contratos() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <p>
-                          {formatarData(contrato.data_inicio)} a {formatarData(contrato.data_fim)}
+                          {formatarDataISO(contrato.data_inicio)} a {formatarDataISO(contrato.data_fim)}
                         </p>
                         {dias !== null && dias >= 0 && dias <= 60 && (
                           <p className="mt-0.5 text-xs font-medium text-amber-700">
@@ -515,7 +515,7 @@ export default function Contratos() {
                       <dd className="text-right">{contrato.modalidade}</dd>
                       <dt className="text-muted-foreground">Vigência</dt>
                       <dd className="text-right">
-                        {formatarData(contrato.data_inicio)} a {formatarData(contrato.data_fim)}
+                        {formatarDataISO(contrato.data_inicio)} a {formatarDataISO(contrato.data_fim)}
                       </dd>
                       <dt className="text-muted-foreground">Valor</dt>
                       <dd className="text-right font-medium">

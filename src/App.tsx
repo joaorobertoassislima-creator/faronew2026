@@ -6,6 +6,7 @@ import CadastroAdministrador from "@/pages/CadastroAdministrador";
 import RedefinirSenha from "@/pages/RedefinirSenha";
 import Home from "@/pages/Home";
 import Contratos from "@/pages/Contratos";
+import ContratoDetalhe from "@/pages/ContratoDetalhe";
 import AppLayout from "@/components/layout/AppLayout";
 
 function RotaProtegida({ children }: { children: ReactNode }) {
@@ -84,6 +85,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <Contratos />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/contratos/:id"
+        element={
+          <RotaProtegida>
+            <ContratoDetalhe />
           </RotaProtegida>
         }
       />

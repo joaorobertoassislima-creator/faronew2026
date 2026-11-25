@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Eye,
   FileSignature,
   Loader2,
   Pencil,
@@ -8,6 +9,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,9 @@ const FORMULARIO_VAZIO: Formulario = {
 
 export default function Contratos() {
   const { papeis } = useAuth();
+  const navegar = useNavigate();
+  const [parametros, setParametros] = useSearchParams();
+  const idParaEditar = parametros.get("editar");
   const podeEditar =
     papeis.includes("administrador") || papeis.includes("agente_compras");
 
@@ -100,6 +105,24 @@ export default function Contratos() {
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  // Abre a edição quando a página é acessada por /contratos?editar=<id>
+  const [parametroAplicado, setParametroAplicado] = useState(false);
+  useEffect(() => {
+    if (!idParaEditar || parametroAplicado) return;
+    const alvo = contratos.find((item) => item.id === idParaEditar);
+    if (!alvo) {
+      if (!carregando) {
+        setParametroAplicado(true);
+        setParametros({}, { replace: true });
+      }
+      return;
+    }
+    setParametroAplicado(true);
+    setParametros({}, { replace: true });
+    abrirEdicao(alvo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idParaEditar, parametroAplicado, contratos, carregando, setParametros]);
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -384,7 +407,7 @@ export default function Contratos() {
                   <th className="px-4 py-3 font-medium">Vigência</th>
                   <th className="px-4 py-3 text-right font-medium">Valor</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  {podeEditar && <th className="px-4 py-3 text-right font-medium">Ações</th>}
+                  <th className="px-4 py-3 text-right font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -426,29 +449,42 @@ export default function Contratos() {
                           {rotuloStatus(contrato.status)}
                         </Badge>
                       </td>
-                      {podeEditar && (
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Editar contrato ${contrato.numero}`}
-                              onClick={() => abrirEdicao(contrato)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Excluir contrato ${contrato.numero}`}
-                              className="text-destructive"
-                              onClick={() => setExcluindo(contrato)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      )}
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Visualizar contrato ${contrato.numero}`}
+                            title="Visualizar contrato"
+                            onClick={() => navegar(`/contratos/${contrato.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {podeEditar && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Editar contrato ${contrato.numero}`}
+                                title="Editar contrato"
+                                onClick={() => abrirEdicao(contrato)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Excluir contrato ${contrato.numero}`}
+                                title="Excluir contrato"
+                                className="text-destructive"
+                                onClick={() => setExcluindo(contrato)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -491,27 +527,39 @@ export default function Contratos() {
                         Vence em {dias} dia(s)
                       </p>
                     )}
-                    {podeEditar && (
-                      <div className="flex gap-2 pt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => abrirEdicao(contrato)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => setExcluindo(contrato)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navegar(`/contratos/${contrato.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        Visualizar
+                      </Button>
+                      {podeEditar && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => abrirEdicao(contrato)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive"
+                            aria-label={`Excluir contrato ${contrato.numero}`}
+                            onClick={() => setExcluindo(contrato)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );

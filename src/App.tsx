@@ -7,6 +7,7 @@ import RedefinirSenha from "@/pages/RedefinirSenha";
 import Home from "@/pages/Home";
 import Contratos from "@/pages/Contratos";
 import ContratoDetalhe from "@/pages/ContratoDetalhe";
+import Fornecedores from "@/pages/Fornecedores";
 import Perfil from "@/pages/Perfil";
 import Notificacoes from "@/pages/Notificacoes";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
@@ -99,6 +100,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <ContratoDetalhe />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/fornecedores"
+        element={
+          <RotaProtegida>
+            <Fornecedores />
           </RotaProtegida>
         }
       />

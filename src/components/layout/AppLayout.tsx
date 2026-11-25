@@ -62,7 +62,6 @@ const ITENS_MENU: ItemMenu[] = [
     rota: "/fornecedores",
     icone: Truck,
     papeis: ["administrador", "agente_compras", "auditor"],
-    disponivel: false,
   },
   {
     titulo: "Contratos",

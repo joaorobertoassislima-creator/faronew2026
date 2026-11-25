@@ -4,9 +4,11 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Boxes,
   CalendarDays,
   FileSignature,
   Hash,
+  Link2,
   Loader2,
   Pencil,
   Plus,
@@ -41,6 +43,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Dialog from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
+import ModalPesquisaItemPCA, {
+  type ItemPCAPesquisa,
+} from "@/components/pca/ModalPesquisaItemPCA";
 
 function Linha({
   rotulo,
@@ -75,6 +80,12 @@ export default function ContratoDetalhe() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [paginaAditivos, setPaginaAditivos] = useState(0);
+
+  /** Itens do PCA (nível 4) vinculados a este contrato. */
+  const [itensPca, setItensPca] = useState<ItemPCAPesquisa[]>([]);
+  /** Pesquisa de item do PCA aberta a partir desta página. */
+  const [pesquisandoItem, setPesquisandoItem] = useState(false);
+  const [salvandoVinculo, setSalvandoVinculo] = useState(false);
 
   const [dialogoAditivo, setDialogoAditivo] = useState(false);
   const [aditivoEditando, setAditivoEditando] = useState<Aditivo | null>(null);
@@ -159,6 +170,60 @@ export default function ContratoDetalhe() {
   useEffect(() => {
     void carregarAditivos();
   }, [carregarAditivos]);
+
+  const carregarItensPca = useCallback(async () => {
+    if (!id) return;
+    const { data, error } = await supabase
+      .from("pca_itens_contrato")
+      .select("*, pca_classes(codigo, descricao), pca_catalogos(id_pncp, exercicio)")
+      .eq("contrato_id", id)
+      .order("codigo", { ascending: true });
+    if (error) {
+      toast(traduzirErroSupabase(error.message), "erro");
+      return;
+    }
+    setItensPca((data as unknown as ItemPCAPesquisa[]) ?? []);
+  }, [id, toast]);
+
+  useEffect(() => {
+    void carregarItensPca();
+  }, [carregarItensPca]);
+
+  /** Vincula o item do PCA escolhido a este contrato. */
+  async function vincularItemPca(item: ItemPCAPesquisa) {
+    if (!contrato) return;
+    setSalvandoVinculo(true);
+    const { error } = await supabase
+      .from("pca_itens_contrato")
+      .update({
+        contrato_id: contrato.id,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", item.id);
+    setSalvandoVinculo(false);
+    if (error) {
+      toast(traduzirErroSupabase(error.message), "erro");
+      return;
+    }
+    toast(`Item ${item.codigo} vinculado ao contrato ${contrato.numero}.`);
+    await carregarItensPca();
+  }
+
+  /** Remove o vínculo do item do PCA com este contrato. */
+  async function desvincularItemPca(item: ItemPCAPesquisa) {
+    setSalvandoVinculo(true);
+    const { error } = await supabase
+      .from("pca_itens_contrato")
+      .update({ contrato_id: null, atualizado_em: new Date().toISOString() })
+      .eq("id", item.id);
+    setSalvandoVinculo(false);
+    if (error) {
+      toast(traduzirErroSupabase(error.message), "erro");
+      return;
+    }
+    toast("Vínculo do item do PCA removido.");
+    await carregarItensPca();
+  }
 
   function abrirAditivo() {
     setFormulario({
@@ -745,6 +810,83 @@ export default function ContratoDetalhe() {
           </Card>
 
           <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Boxes className="h-4 w-4" />
+                  Itens do Contrato
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Itens do PCA (nível 4) vinculados a este contrato. O mesmo
+                  item pode ser vinculado ou excluído tanto pela página do PCA
+                  quanto por aqui.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPesquisandoItem(true)}
+                disabled={salvandoVinculo}
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {itensPca.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum item do PCA vinculado a este contrato.
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-3 font-medium">Código</th>
+                        <th className="px-3 py-3 font-medium">Descrição</th>
+                        <th className="px-3 py-3 font-medium">Classe/grupo</th>
+                        <th className="px-3 py-3 font-medium">Catálogo</th>
+                        <th className="px-3 py-3 text-right font-medium">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itensPca.map((item) => (
+                        <tr key={item.id} className="border-t border-border">
+                          <td className="px-3 py-2 font-mono font-medium whitespace-nowrap">
+                            {item.codigo}
+                          </td>
+                          <td className="px-3 py-2">{item.descricao ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {item.classe
+                              ? `${item.classe.codigo} · ${item.classe.descricao}`
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {item.catalogo
+                              ? `${item.catalogo.id_pncp} · ${item.catalogo.exercicio}`
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void desvincularItemPca(item)}
+                              disabled={salvandoVinculo}
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Desvincular
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle className="text-base">Observações</CardTitle>
             </CardHeader>
@@ -1068,6 +1210,15 @@ export default function ContratoDetalhe() {
           </div>
         </div>
       </Dialog>
+
+      <ModalPesquisaItemPCA
+        aberto={pesquisandoItem}
+        aoFechar={() => setPesquisandoItem(false)}
+        aoSelecionar={(item) => void vincularItemPca(item)}
+        contratoSelecionadoId={contrato?.id ?? null}
+        titulo="Adicionar item do PCA ao contrato"
+        descricao="Pesquise o item do PCA (nível 4) e selecione para vincular a este contrato. O vínculo também pode ser feito pela página do PCA."
+      />
     </div>
   );
 }

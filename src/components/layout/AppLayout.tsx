@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth, type Papel } from "@/lib/auth";
+import { useNotificacoes } from "@/lib/notificacoesContexto";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -118,6 +119,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const [perfilExpandido, setPerfilExpandido] = useState(false);
   const { toast } = useToast();
+  const { naoLidas } = useNotificacoes();
 
   const itens = itensVisiveis(papeis);
 
@@ -165,11 +167,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const perfilRodape = (
     <div className="relative border-t border-border p-3">
+      <div className="flex items-center gap-1">
       <button
         type="button"
         onClick={() => setPerfilExpandido((v) => !v)}
         aria-expanded={perfilExpandido}
-        className="flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex flex-1 items-center gap-3 rounded-md px-3 py-1.5 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         title="Abrir menu do usuário"
       >
         {perfil?.avatar_url ? (
@@ -193,11 +196,28 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </span>
         <ChevronDown
           className={cn(
-            "ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
             perfilExpandido && "rotate-180",
           )}
         />
       </button>
+        <Link
+          to="/notificacoes"
+          onClick={(evento) => evento.stopPropagation()}
+          aria-label="Abrir central de notificações"
+          title={
+            naoLidas > 0
+              ? `${naoLidas} notificação${naoLidas > 1 ? "ões" : ""} não lida${naoLidas > 1 ? "s" : ""}`
+              : "Central de notificações"
+          }
+          className="relative shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <Bell className="h-4 w-4" />
+          {naoLidas > 0 && (
+            <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
+          )}
+        </Link>
+      </div>
 
       {perfilExpandido && (
         <div className="fixed bottom-24 left-3 right-3 z-[60] flex flex-col gap-1 rounded-lg border border-border bg-card p-2 shadow-xl lg:absolute lg:bottom-2 lg:left-full lg:right-auto lg:z-50 lg:ml-2 lg:w-56">
@@ -209,17 +229,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <User className="h-4 w-4 shrink-0" />
             Meu Perfil
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setPerfilExpandido(false);
-              toast("Notificações: módulo em construção.", "info");
-            }}
+          <Link
+            to="/notificacoes"
+            onClick={() => setPerfilExpandido(false)}
             className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
-            <Bell className="h-4 w-4 shrink-0" />
+            <span className="relative shrink-0">
+              <Bell className="h-4 w-4" />
+              {naoLidas > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
+              )}
+            </span>
             Notificações
-          </button>
+            {naoLidas > 0 && (
+              <span className="ml-auto rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+                {naoLidas}
+              </span>
+            )}
+          </Link>
           <button
             type="button"
             onClick={() => {

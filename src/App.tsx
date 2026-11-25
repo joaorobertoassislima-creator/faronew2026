@@ -8,6 +8,8 @@ import Home from "@/pages/Home";
 import Contratos from "@/pages/Contratos";
 import ContratoDetalhe from "@/pages/ContratoDetalhe";
 import Perfil from "@/pages/Perfil";
+import Notificacoes from "@/pages/Notificacoes";
+import { NotificacoesProvider } from "@/lib/notificacoesContexto";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -50,6 +52,7 @@ function RotasPublicas({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <ToastProvider>
+      <NotificacoesProvider>
       <Routes>
       <Route
         path="/login"
@@ -107,8 +110,17 @@ export default function App() {
           </RotaProtegida>
         }
       />
+      <Route
+        path="/notificacoes"
+        element={
+          <RotaProtegida>
+            <Notificacoes />
+          </RotaProtegida>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </NotificacoesProvider>
     </ToastProvider>
   );
 }

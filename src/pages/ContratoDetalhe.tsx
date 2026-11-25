@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -72,9 +73,20 @@ export default function ContratoDetalhe() {
   const [erro, setErro] = useState<string | null>(null);
 
   const [dialogoAditivo, setDialogoAditivo] = useState(false);
+  const [aditivoEditando, setAditivoEditando] = useState<Aditivo | null>(null);
+  const [aditivoExcluindo, setAditivoExcluindo] = useState<Aditivo | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(null);
+  const [formularioEdicao, setFormularioEdicao] = useState({
+    numero: "",
+    data_aditivo: "",
+    data_inicio: "",
+    data_fim: "",
+    tipo_valor: "inalterado" as "inalterado" | "acrescimo" | "reducao",
+    valor_aditivo: "",
+    observacoes: "",
+  });
   const [formulario, setFormulario] = useState({
     numero: "",
     data_aditivo: "",
@@ -239,6 +251,170 @@ export default function ContratoDetalhe() {
         ? "Aditivo registrado e vigência do contrato atualizada."
         : "Aditivo registrado, vigência e valor do contrato atualizados.",
     );
+    await carregar();
+    await carregarAditivos();
+  }
+
+  function abrirEdicaoAditivo(aditivo: Aditivo) {
+    const tipo = aditivo.tipo_valor ?? "inalterado";
+    const anterior = Number(aditivo.valor_anterior ?? 0);
+    const novo = Number(aditivo.valor_novo ?? anterior);
+    const diferenca =
+      tipo === "acrescimo" ? Math.abs(novo - anterior) : tipo === "reducao" ? Math.abs(anterior - novo) : 0;
+    setFormularioEdicao({
+      numero: aditivo.numero,
+      data_aditivo: isoParaDataBr(aditivo.data_aditivo),
+      data_inicio: isoParaDataBr(aditivo.data_inicio),
+      data_fim: isoParaDataBr(aditivo.data_fim),
+      tipo_valor: tipo,
+      valor_aditivo: diferenca > 0 ? diferenca.toFixed(2).replace(".", ",") : "",
+      observacoes: aditivo.observacoes ?? "",
+    });
+    setErroFormulario(null);
+    setAditivoEditando(aditivo);
+  }
+
+  async function salvarEdicaoAditivo() {
+    if (!aditivoEditando) return;
+    if (!formularioEdicao.numero.trim()) {
+      setErroFormulario("Informe o número do aditivo.");
+      return;
+    }
+    if (!formularioEdicao.data_aditivo.trim()) {
+      setErroFormulario("Informe a data do aditivo.");
+      return;
+    }
+    if (!formularioEdicao.data_fim.trim()) {
+      setErroFormulario("Informe a nova data de vigência (término).");
+      return;
+    }
+    const dataAditivoIso = dataParaIso(formularioEdicao.data_aditivo);
+    const inicioIso = formularioEdicao.data_inicio ? dataParaIso(formularioEdicao.data_inicio) : null;
+    const fimIso = dataParaIso(formularioEdicao.data_fim);
+    if (!dataAditivoIso || !fimIso) {
+      setErroFormulario("Informe as datas no formato dd/mm/aaaa.");
+      return;
+    }
+    if (inicioIso && fimIso && fimIso < inicioIso) {
+      setErroFormulario("A data de término deve ser posterior à data de início.");
+      return;
+    }
+    const valorAnterior = Number(aditivoEditando.valor_anterior ?? 0);
+    let valorNovo = valorAnterior;
+    let tipoValor: "inalterado" | "acrescimo" | "reducao" = "inalterado";
+    if (formularioEdicao.tipo_valor !== "inalterado") {
+      const valorAlteracao = moedaParaNumero(formularioEdicao.valor_aditivo);
+      if (valorAlteracao <= 0) {
+        setErroFormulario("Informe o valor do aditivo (maior que zero).");
+        return;
+      }
+      tipoValor = formularioEdicao.tipo_valor;
+      valorNovo =
+        tipoValor === "acrescimo" ? valorAnterior + valorAlteracao : valorAnterior - valorAlteracao;
+      if (valorNovo < 0) {
+        setErroFormulario("A redução não pode deixar o valor do contrato negativo.");
+        return;
+      }
+    }
+
+    setSalvando(true);
+    setErroFormulario(null);
+
+    const { error: erroAditivo } = await supabase
+      .from("aditivos_contrato")
+      .update({
+        numero: formularioEdicao.numero.trim(),
+        data_aditivo: dataAditivoIso,
+        data_inicio: inicioIso,
+        data_fim: fimIso,
+        valor_anterior: valorAnterior,
+        valor_novo: valorNovo,
+        tipo_valor: tipoValor,
+        observacoes: formularioEdicao.observacoes.trim() || null,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", aditivoEditando.id);
+
+    if (erroAditivo) {
+      setSalvando(false);
+      setErroFormulario(traduzirErroSupabase(erroAditivo.message));
+      return;
+    }
+
+    // Se o aditivo editado é o que define a vigência atual do contrato,
+    // a vigência e o valor do contrato também são atualizados.
+    if (contrato && contrato.data_fim === aditivoEditando.data_fim) {
+      const { error: erroContrato } = await supabase
+        .from("contratos")
+        .update({
+          data_inicio: inicioIso ?? contrato.data_inicio,
+          data_fim: fimIso,
+          valor: valorNovo,
+          atualizado_em: new Date().toISOString(),
+        })
+        .eq("id", contrato.id);
+      if (erroContrato) {
+        setSalvando(false);
+        setErroFormulario(traduzirErroSupabase(erroContrato.message));
+        return;
+      }
+    }
+
+    setSalvando(false);
+    setAditivoEditando(null);
+    setMensagem("Aditivo atualizado.");
+    await carregar();
+    await carregarAditivos();
+  }
+
+  async function excluirAditivo() {
+    if (!aditivoExcluindo) return;
+    setSalvando(true);
+    setErroFormulario(null);
+
+    const { error } = await supabase
+      .from("aditivos_contrato")
+      .delete()
+      .eq("id", aditivoExcluindo.id);
+
+    if (error) {
+      setSalvando(false);
+      setErroFormulario(traduzirErroSupabase(error.message));
+      return;
+    }
+
+    // Ao remover o aditivo que vigora, o contrato volta ao aditivo mais
+    // recente restante (ou à vigência/valor originais).
+    if (contrato && contrato.data_fim === aditivoExcluindo.data_fim) {
+      const restantes = aditivos
+        .filter((item) => item.id !== aditivoExcluindo.id)
+        .sort((a, b) => (a.data_aditivo < b.data_aditivo ? 1 : -1));
+      const anterior = restantes[0];
+      const { error: erroContrato } = await supabase
+        .from("contratos")
+        .update({
+          data_inicio:
+            anterior?.data_inicio ?? contrato.vigencia_original_inicio ?? contrato.data_inicio,
+          data_fim: anterior?.data_fim ?? contrato.vigencia_original_fim ?? contrato.data_fim,
+          valor:
+            anterior?.valor_novo !== null && anterior?.valor_novo !== undefined
+              ? Number(anterior.valor_novo)
+              : contrato.valor_original !== null && contrato.valor_original !== undefined
+                ? Number(contrato.valor_original)
+                : contrato.valor,
+          atualizado_em: new Date().toISOString(),
+        })
+        .eq("id", contrato.id);
+      if (erroContrato) {
+        setSalvando(false);
+        setErroFormulario(traduzirErroSupabase(erroContrato.message));
+        return;
+      }
+    }
+
+    setSalvando(false);
+    setAditivoExcluindo(null);
+    setMensagem("Aditivo excluído.");
     await carregar();
     await carregarAditivos();
   }
@@ -435,6 +611,32 @@ export default function ContratoDetalhe() {
                           ) : (
                             <Badge variant="muted">Histórico</Badge>
                           )}
+                          {podeEditar && (
+                            <div className="ml-auto flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                aria-label={`Editar aditivo ${aditivo.numero}`}
+                                onClick={() => abrirEdicaoAditivo(aditivo)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                aria-label={`Excluir aditivo ${aditivo.numero}`}
+                                onClick={() => {
+                                  setErroFormulario(null);
+                                  setAditivoExcluindo(aditivo);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Excluir
+                              </Button>
+                            </div>
+                          )}
                         </div>
                         <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
                           <div className="flex gap-1.5">
@@ -526,6 +728,177 @@ export default function ContratoDetalhe() {
           </p>
         </>
       )}
+
+      <Dialog
+        aberto={aditivoEditando !== null}
+        titulo="Editar aditivo"
+        descricao={
+          aditivoEditando
+            ? `Altere os dados do aditivo ${aditivoEditando.numero}.`
+            : undefined
+        }
+        aoFechar={() => setAditivoEditando(null)}
+        rodape={
+          <>
+            <Button variant="outline" onClick={() => setAditivoEditando(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void salvarEdicaoAditivo()} disabled={salvando}>
+              {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+              Salvar alterações
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {erroFormulario && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <span>{erroFormulario}</span>
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="edicao-numero">Número do aditivo *</Label>
+              <Input
+                id="edicao-numero"
+                className="mt-1"
+                value={formularioEdicao.numero}
+                onChange={(evento) =>
+                  setFormularioEdicao((atual) => ({ ...atual, numero: evento.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="edicao-data">Data do aditivo *</Label>
+              <Input
+                id="edicao-data"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formularioEdicao.data_aditivo}
+                onChange={(evento) =>
+                  setFormularioEdicao((atual) => ({ ...atual, data_aditivo: evento.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="edicao-inicio">Início da nova vigência</Label>
+              <Input
+                id="edicao-inicio"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formularioEdicao.data_inicio}
+                onChange={(evento) =>
+                  setFormularioEdicao((atual) => ({ ...atual, data_inicio: evento.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="edicao-fim">Término da nova vigência *</Label>
+              <Input
+                id="edicao-fim"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formularioEdicao.data_fim}
+                onChange={(evento) =>
+                  setFormularioEdicao((atual) => ({ ...atual, data_fim: evento.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="edicao-tipo-valor">Alteração de valor</Label>
+              <Select
+                id="edicao-tipo-valor"
+                className="mt-1"
+                value={formularioEdicao.tipo_valor}
+                onChange={(evento) =>
+                  setFormularioEdicao((atual) => ({
+                    ...atual,
+                    tipo_valor: evento.target.value as "inalterado" | "acrescimo" | "reducao",
+                  }))
+                }
+              >
+                <option value="inalterado">Manter valor</option>
+                <option value="acrescimo">Acréscimo</option>
+                <option value="reducao">Redução</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edicao-valor">Valor do aditivo (R$)</Label>
+              <Input
+                id="edicao-valor"
+                className="mt-1"
+                inputMode="decimal"
+                disabled={formularioEdicao.tipo_valor === "inalterado"}
+                value={formularioEdicao.valor_aditivo}
+                onChange={(evento) =>
+                  setFormularioEdicao((atual) => ({ ...atual, valor_aditivo: evento.target.value }))
+                }
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="edicao-observacoes">Observações</Label>
+            <Textarea
+              id="edicao-observacoes"
+              className="mt-1"
+              value={formularioEdicao.observacoes}
+              onChange={(evento) =>
+                setFormularioEdicao((atual) => ({ ...atual, observacoes: evento.target.value }))
+              }
+            />
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog
+        aberto={aditivoExcluindo !== null}
+        titulo="Excluir aditivo"
+        descricao={
+          aditivoExcluindo
+            ? `O aditivo ${aditivoExcluindo.numero} será removido definitivamente.`
+            : undefined
+        }
+        aoFechar={() => setAditivoExcluindo(null)}
+        rodape={
+          <>
+            <Button variant="outline" onClick={() => setAditivoExcluindo(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void excluirAditivo()}
+              disabled={salvando}
+            >
+              {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+              Excluir aditivo
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3 text-sm text-muted-foreground">
+          {erroFormulario && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <span>{erroFormulario}</span>
+            </div>
+          )}
+          <p>
+            Esta ação não pode ser desfeita. Se o aditivo removido for o que define a vigência
+            atual, o contrato voltará à vigência do aditivo anterior ou, se não houver, à
+            vigência original.
+          </p>
+        </div>
+      </Dialog>
 
       <Dialog
         aberto={dialogoAditivo}

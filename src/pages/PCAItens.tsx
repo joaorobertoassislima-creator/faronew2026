@@ -171,6 +171,8 @@ export default function PCAItens() {
     | null
   >(null);
   const [vinculando, setVinculando] = useState<ItemContratoPCA | null>(null);
+  /** Pesquisa de contrato aberta a partir do formulário do nível 4. */
+  const [pesquisandoContrato, setPesquisandoContrato] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<{
@@ -1583,29 +1585,44 @@ export default function PCAItens() {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="itemcontrato_contrato">Contrato vinculado</Label>
-                <Select
-                  id="itemcontrato_contrato"
-                  value={dialogo.dados.contrato_id ?? ""}
-                  onChange={(evento) =>
-                    setDialogo({
-                      tipo: "itemContrato",
-                      dados: {
-                        ...dialogo.dados,
-                        contrato_id: evento.target.value || null,
-                      },
-                    })
-                  }
-                >
-                  <option value="">Nenhum contrato vinculado</option>
-                  {contratos.map((contrato) => (
-                    <option key={contrato.id} value={contrato.id}>
-                      {contrato.numero} · {contrato.objeto}
-                    </option>
-                  ))}
-                </Select>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Select
+                      id="itemcontrato_contrato"
+                      value={dialogo.dados.contrato_id ?? ""}
+                      onChange={(evento) =>
+                        setDialogo({
+                          tipo: "itemContrato",
+                          dados: {
+                            ...dialogo.dados,
+                            contrato_id: evento.target.value || null,
+                          },
+                        })
+                      }
+                    >
+                      <option value="">Nenhum contrato vinculado</option>
+                      {contratos.map((contrato) => (
+                        <option key={contrato.id} value={contrato.id}>
+                          {contrato.numero} · {contrato.objeto}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title="Pesquisar contrato"
+                    aria-label="Pesquisar contrato"
+                    onClick={() => setPesquisandoContrato(true)}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Depois de salvar o item, use o botão “Vincular contrato” na
-                  lista para escolher o contrato pela pesquisa avançada.
+                  Clique na lupa para escolher o contrato na tabela paginada
+                  com filtros por coluna (o contrato fica vinculado ao item ao
+                  salvar).
                 </p>
               </div>
             </div>
@@ -1650,10 +1667,31 @@ export default function PCAItens() {
       </Dialog>
 
       <ModalPesquisaContrato
-        aberto={vinculando !== null}
-        aoFechar={() => setVinculando(null)}
-        aoSelecionar={(contrato) => void vincularContrato(contrato)}
-        contratoSelecionadoId={vinculando?.contrato_id ?? null}
+        aberto={vinculando !== null || pesquisandoContrato}
+        aoFechar={() => {
+          setVinculando(null);
+          setPesquisandoContrato(false);
+        }}
+        aoSelecionar={(contrato) => {
+          if (vinculando) {
+            void vincularContrato(contrato);
+            return;
+          }
+          setDialogo((atual) =>
+            atual && atual.tipo === "itemContrato"
+              ? {
+                  ...atual,
+                  dados: { ...atual.dados, contrato_id: contrato.id },
+                }
+              : atual,
+          );
+        }}
+        contratoSelecionadoId={
+          vinculando?.contrato_id ??
+          (dialogo && dialogo.tipo === "itemContrato"
+            ? dialogo.dados.contrato_id
+            : null)
+        }
       />
     </div>
   );

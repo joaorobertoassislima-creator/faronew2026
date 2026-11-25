@@ -20,6 +20,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Dialog from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 import { dataParaIso, formatarDataISO, formatarMoeda, isoParaDataBr } from "@/lib/format";
 import { traduzirErroSupabase } from "@/lib/erros";
 import {
@@ -78,7 +79,7 @@ export default function Contratos() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [mensagem, setMensagem] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");
@@ -101,7 +102,9 @@ export default function Contratos() {
       .select("*")
       .order("numero", { ascending: true });
     if (error) {
-      setErro(traduzirErroSupabase(error.message));
+      const mensagem = traduzirErroSupabase(error.message);
+      setErro(mensagem);
+      toast(mensagem, "erro");
       setContratos([]);
     } else {
       setContratos((data as Contrato[]) ?? []);
@@ -287,12 +290,14 @@ export default function Contratos() {
     setSalvando(false);
 
     if (resultado.error) {
-      setErroFormulario(traduzirErroSupabase(resultado.error.message));
+      const mensagem = traduzirErroSupabase(resultado.error.message);
+      setErroFormulario(mensagem);
+      toast(mensagem, "erro");
       return;
     }
 
     setDialogoAberto(false);
-    setMensagem(editando ? "Contrato atualizado com sucesso." : "Contrato registrado com sucesso.");
+    toast(editando ? "Contrato atualizado com sucesso." : "Contrato registrado com sucesso.");
     await carregar();
   }
 
@@ -302,12 +307,14 @@ export default function Contratos() {
     const { error } = await supabase.from("contratos").delete().eq("id", excluindo.id);
     setProcessandoExclusao(false);
     if (error) {
-      setErro(traduzirErroSupabase(error.message));
+      const mensagem = traduzirErroSupabase(error.message);
+      setErro(mensagem);
+      toast(mensagem, "erro");
       setExcluindo(null);
       return;
     }
     setExcluindo(null);
-    setMensagem("Contrato excluído.");
+    toast("Contrato excluído.");
     await carregar();
   }
 
@@ -372,12 +379,6 @@ export default function Contratos() {
               Tentar novamente
             </Button>
           </div>
-        </div>
-      )}
-
-      {mensagem && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          {mensagem}
         </div>
       )}
 

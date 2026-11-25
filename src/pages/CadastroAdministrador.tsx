@@ -20,8 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
 
 export default function CadastroAdministrador() {
+  const { toast } = useToast();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -32,13 +34,11 @@ export default function CadastroAdministrador() {
   const [telefone, setTelefone] = useState("");
   const [codigo, setCodigo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setErro(null);
-    setSucesso(null);
 
     if (!nome.trim()) {
       setErro("Informe o nome completo do administrador.");
@@ -94,7 +94,7 @@ export default function CadastroAdministrador() {
         return;
       }
 
-      setSucesso(mensagem.mensagem ?? "Administrador cadastrado com sucesso.");
+      toast(mensagem.mensagem ?? "Administrador cadastrado com sucesso.");
       setNome("");
       setEmail("");
       setSenha("");
@@ -318,13 +318,6 @@ export default function CadastroAdministrador() {
                   <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{erro}</span>
-                  </div>
-                )}
-
-                {sucesso && (
-                  <div className="flex items-start gap-2 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm text-foreground">
-                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <span>{sucesso}</span>
                   </div>
                 )}
 

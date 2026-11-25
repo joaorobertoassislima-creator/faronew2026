@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Contratos from "@/pages/Contratos";
 import ContratoDetalhe from "@/pages/ContratoDetalhe";
 import AppLayout from "@/components/layout/AppLayout";
+import { ToastProvider } from "@/components/ui/toast";
 
 function RotaProtegida({ children }: { children: ReactNode }) {
   const { sessao, carregando } = useAuth();
@@ -47,7 +48,8 @@ function RotasPublicas({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
+    <ToastProvider>
+      <Routes>
       <Route
         path="/login"
         element={
@@ -97,6 +99,7 @@ export default function App() {
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </ToastProvider>
   );
 }

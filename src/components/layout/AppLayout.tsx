@@ -18,6 +18,7 @@ import {
 import { useAuth, type Papel } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 
 interface ItemMenu {
   titulo: string;
@@ -103,6 +104,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { perfil, papeis, sair } = useAuth();
   const navegar = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
+  const { toast } = useToast();
 
   const itens = itensVisiveis(papeis);
 
@@ -162,6 +164,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         className="w-full justify-start gap-2"
         onClick={async () => {
           await sair();
+          toast("Sessão encerrada com sucesso.", "info");
           navegar("/login");
         }}
       >

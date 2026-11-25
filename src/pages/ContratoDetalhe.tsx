@@ -39,6 +39,7 @@ import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Dialog from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 
 function Linha({
   rotulo,
@@ -64,6 +65,7 @@ export default function ContratoDetalhe() {
   const { id } = useParams<{ id: string }>();
   const navegar = useNavigate();
   const { papeis } = useAuth();
+  const { toast } = useToast();
   const podeEditar =
     papeis.includes("administrador") || papeis.includes("agente_compras");
 
@@ -77,7 +79,6 @@ export default function ContratoDetalhe() {
   const [aditivoExcluindo, setAditivoExcluindo] = useState<Aditivo | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
-  const [mensagem, setMensagem] = useState<string | null>(null);
   const [formularioEdicao, setFormularioEdicao] = useState({
     numero: "",
     data_aditivo: "",
@@ -223,7 +224,9 @@ export default function ContratoDetalhe() {
 
     if (erroAditivo) {
       setSalvando(false);
-      setErroFormulario(traduzirErroSupabase(erroAditivo.message));
+      const msgToast = traduzirErroSupabase(erroAditivo.message);
+      setErroFormulario(msgToast);
+      toast(msgToast, "erro");
       return;
     }
 
@@ -241,12 +244,14 @@ export default function ContratoDetalhe() {
     setSalvando(false);
 
     if (erroContrato) {
-      setErroFormulario(traduzirErroSupabase(erroContrato.message));
+      const msgToast = traduzirErroSupabase(erroContrato.message);
+      setErroFormulario(msgToast);
+      toast(msgToast, "erro");
       return;
     }
 
     setDialogoAditivo(false);
-    setMensagem(
+    toast(
       tipoValor === "inalterado"
         ? "Aditivo registrado e vigência do contrato atualizada."
         : "Aditivo registrado, vigência e valor do contrato atualizados.",
@@ -337,7 +342,9 @@ export default function ContratoDetalhe() {
 
     if (erroAditivo) {
       setSalvando(false);
-      setErroFormulario(traduzirErroSupabase(erroAditivo.message));
+      const msgToast = traduzirErroSupabase(erroAditivo.message);
+      setErroFormulario(msgToast);
+      toast(msgToast, "erro");
       return;
     }
 
@@ -355,14 +362,16 @@ export default function ContratoDetalhe() {
         .eq("id", contrato.id);
       if (erroContrato) {
         setSalvando(false);
-        setErroFormulario(traduzirErroSupabase(erroContrato.message));
+        const msgToast = traduzirErroSupabase(erroContrato.message);
+      setErroFormulario(msgToast);
+      toast(msgToast, "erro");
         return;
       }
     }
 
     setSalvando(false);
     setAditivoEditando(null);
-    setMensagem("Aditivo atualizado.");
+    toast("Aditivo atualizado.");
     await carregar();
     await carregarAditivos();
   }
@@ -379,7 +388,9 @@ export default function ContratoDetalhe() {
 
     if (error) {
       setSalvando(false);
-      setErroFormulario(traduzirErroSupabase(error.message));
+      const msgToast = traduzirErroSupabase(error.message);
+      setErroFormulario(msgToast);
+      toast(msgToast, "erro");
       return;
     }
 
@@ -407,14 +418,16 @@ export default function ContratoDetalhe() {
         .eq("id", contrato.id);
       if (erroContrato) {
         setSalvando(false);
-        setErroFormulario(traduzirErroSupabase(erroContrato.message));
+        const msgToast = traduzirErroSupabase(erroContrato.message);
+      setErroFormulario(msgToast);
+      toast(msgToast, "erro");
         return;
       }
     }
 
     setSalvando(false);
     setAditivoExcluindo(null);
-    setMensagem("Aditivo excluído.");
+    toast("Aditivo excluído.");
     await carregar();
     await carregarAditivos();
   }
@@ -451,12 +464,6 @@ export default function ContratoDetalhe() {
           )}
         </div>
       </div>
-
-      {mensagem && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          {mensagem}
-        </div>
-      )}
 
       {carregando && (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">

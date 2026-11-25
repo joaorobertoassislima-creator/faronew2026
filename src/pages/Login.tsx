@@ -1,27 +1,27 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowLeft, KeyRound, Loader2, Lock, Mail, Package, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Lock, Mail, Package, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
 
 export default function Login() {
   const { entrar, recuperarSenha } = useAuth();
   const navegar = useNavigate();
+  const { toast } = useToast();
 
   const [modo, setModo] = useState<"login" | "recuperacao">("login");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setErro(null);
-    setSucesso(null);
 
     if (!email.trim()) {
       setErro("Informe o e-mail institucional.");
@@ -47,8 +47,9 @@ export default function Login() {
         if (mensagem) {
           setErro(mensagem);
         } else {
-          setSucesso(
+          toast(
             "Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.",
+            "info",
           );
         }
       }
@@ -157,7 +158,6 @@ export default function Login() {
                         onClick={() => {
                           setModo("recuperacao");
                           setErro(null);
-                          setSucesso(null);
                         }}
                       >
                         Esqueci minha senha
@@ -186,13 +186,6 @@ export default function Login() {
                   </div>
                 )}
 
-                {sucesso && (
-                  <div className="flex items-start gap-2 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm text-foreground">
-                    <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <span>{sucesso}</span>
-                  </div>
-                )}
-
                 <Button type="submit" className="w-full" disabled={enviando}>
                   {enviando && <Loader2 className="h-4 w-4 animate-spin" />}
                   {modo === "login" ? "Entrar" : "Enviar instruções"}
@@ -206,7 +199,6 @@ export default function Login() {
                     onClick={() => {
                       setModo("login");
                       setErro(null);
-                      setSucesso(null);
                     }}
                   >
                     <ArrowLeft className="h-4 w-4" />

@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, KeyRound, Loader2, Lock, Package } from "lucide-react";
+import { AlertCircle, KeyRound, Loader2, Lock, Package } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
 
 export default function RedefinirSenha() {
   const { redefinirSenha } = useAuth();
   const navegar = useNavigate();
+  const { toast } = useToast();
 
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -39,6 +41,7 @@ export default function RedefinirSenha() {
       return;
     }
     setSucesso(true);
+    toast("Senha redefinida com sucesso. Redirecionando para o login…");
     setTimeout(() => navegar("/login", { replace: true }), 2000);
   }
 
@@ -101,13 +104,6 @@ export default function RedefinirSenha() {
                 <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{erro}</span>
-                </div>
-              )}
-
-              {sucesso && (
-                <div className="flex items-start gap-2 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm text-foreground">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                  <span>Senha redefinida com sucesso. Redirecionando para o login…</span>
                 </div>
               )}
 

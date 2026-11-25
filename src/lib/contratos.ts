@@ -39,6 +39,20 @@ export interface Contrato {
   atualizado_em: string;
 }
 
+/** Registro de aditivo (prorrogação/alteração de vigência) de um contrato. */
+export interface Aditivo {
+  id: string;
+  contrato_id: string;
+  numero: string;
+  data_aditivo: string;
+  data_inicio: string | null;
+  data_fim: string;
+  observacoes: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
 export function rotuloStatus(status: string): string {
   return STATUS_CONTRATO.find((item) => item.valor === status)?.rotulo ?? status;
 }

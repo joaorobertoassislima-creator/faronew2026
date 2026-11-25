@@ -8,21 +8,33 @@ import {
   Hash,
   Loader2,
   Pencil,
+  Plus,
   ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { traduzirErroSupabase } from "@/lib/erros";
-import { formatarData, formatarDataHora, formatarMoeda } from "@/lib/format";
+import {
+  dataParaIso,
+  formatarData,
+  formatarDataHora,
+  formatarMoeda,
+  isoParaDataBr,
+} from "@/lib/format";
 import {
   diasParaVencer,
   rotuloStatus,
   varianteStatus,
+  type Aditivo,
   type Contrato,
 } from "@/lib/contratos";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import Dialog from "@/components/ui/dialog";
 
 function Linha({
   rotulo,
@@ -52,8 +64,21 @@ export default function ContratoDetalhe() {
     papeis.includes("administrador") || papeis.includes("agente_compras");
 
   const [contrato, setContrato] = useState<Contrato | null>(null);
+  const [aditivos, setAditivos] = useState<Aditivo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  const [dialogoAditivo, setDialogoAditivo] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erroFormulario, setErroFormulario] = useState<string | null>(null);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [formulario, setFormulario] = useState({
+    numero: "",
+    data_aditivo: "",
+    data_inicio: "",
+    data_fim: "",
+    observacoes: "",
+  });
 
   const carregar = useCallback(async () => {
     if (!id) {
@@ -80,9 +105,110 @@ export default function ContratoDetalhe() {
     setCarregando(false);
   }, [id]);
 
+  const carregarAditivos = useCallback(async () => {
+    if (!id) return;
+    const { data, error } = await supabase
+      .from("aditivos_contrato")
+      .select("*")
+      .eq("contrato_id", id)
+      .order("data_aditivo", { ascending: true });
+    if (error) {
+      setErro(traduzirErroSupabase(error.message));
+      return;
+    }
+    setAditivos((data as Aditivo[]) ?? []);
+  }, [id]);
+
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  useEffect(() => {
+    void carregarAditivos();
+  }, [carregarAditivos]);
+
+  function abrirAditivo() {
+    setFormulario({
+      numero: "",
+      data_aditivo: "",
+      data_inicio: contrato?.data_inicio ? isoParaDataBr(contrato.data_inicio) : "",
+      data_fim: contrato?.data_fim ? isoParaDataBr(contrato.data_fim) : "",
+      observacoes: "",
+    });
+    setErroFormulario(null);
+    setDialogoAditivo(true);
+  }
+
+  function alterar(campo: keyof typeof formulario, valor: string) {
+    setFormulario((atual) => ({ ...atual, [campo]: valor }));
+  }
+
+  async function salvarAditivo() {
+    if (!contrato) return;
+    if (!formulario.numero.trim()) {
+      setErroFormulario("Informe o número do aditivo.");
+      return;
+    }
+    if (!formulario.data_aditivo.trim()) {
+      setErroFormulario("Informe a data do aditivo.");
+      return;
+    }
+    if (!formulario.data_fim.trim()) {
+      setErroFormulario("Informe a nova data de vigência (término).");
+      return;
+    }
+    const dataAditivoIso = dataParaIso(formulario.data_aditivo);
+    const inicioIso = formulario.data_inicio ? dataParaIso(formulario.data_inicio) : null;
+    const fimIso = dataParaIso(formulario.data_fim);
+    if (!dataAditivoIso || !fimIso) {
+      setErroFormulario("Informe as datas no formato dd/mm/aaaa.");
+      return;
+    }
+    if (inicioIso && fimIso && fimIso < inicioIso) {
+      setErroFormulario("A data de término deve ser posterior à data de início.");
+      return;
+    }
+
+    setSalvando(true);
+    setErroFormulario(null);
+
+    const { error: erroAditivo } = await supabase.from("aditivos_contrato").insert({
+      contrato_id: contrato.id,
+      numero: formulario.numero.trim(),
+      data_aditivo: dataAditivoIso,
+      data_inicio: inicioIso,
+      data_fim: fimIso,
+      observacoes: formulario.observacoes.trim() || null,
+    });
+
+    if (erroAditivo) {
+      setSalvando(false);
+      setErroFormulario(traduzirErroSupabase(erroAditivo.message));
+      return;
+    }
+
+    const { error: erroContrato } = await supabase
+      .from("contratos")
+      .update({
+        data_inicio: inicioIso ?? contrato.data_inicio,
+        data_fim: fimIso,
+        status: "vigente",
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", contrato.id);
+
+    setSalvando(false);
+
+    if (erroContrato) {
+      setErroFormulario(traduzirErroSupabase(erroContrato.message));
+      return;
+    }
+
+    setDialogoAditivo(false);
+    setMensagem("Aditivo registrado e vigência do contrato atualizada.");
+    await carregar();
+    await carregarAditivos();
+  }
 
   const dias = contrato ? diasParaVencer(contrato.data_fim) : null;
 
@@ -115,6 +241,12 @@ export default function ContratoDetalhe() {
           )}
         </div>
       </div>
+
+      {mensagem && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          {mensagem}
+        </div>
+      )}
 
       {carregando && (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
@@ -208,6 +340,95 @@ export default function ContratoDetalhe() {
           </Card>
 
           <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  Aditivos
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Prorrogações e alterações de vigência registradas para este contrato.
+                </p>
+              </div>
+              {podeEditar && (
+                <Button variant="outline" size="sm" onClick={abrirAditivo}>
+                  <Plus className="h-4 w-4" />
+                  Aditar contrato
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {aditivos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum aditivo registrado para este contrato.
+                </p>
+              ) : (
+                <ol className="relative space-y-4 border-l border-border pl-6">
+                  {aditivos.map((aditivo, indice) => {
+                    const ehUltimo = indice === aditivos.length - 1;
+                    const diasAditivo = diasParaVencer(aditivo.data_fim);
+                    return (
+                      <li key={aditivo.id} className="relative">
+                        <span
+                          className={`absolute -left-[31px] top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-background ${
+                            ehUltimo ? "bg-primary" : "bg-muted-foreground/60"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium">Aditivo {aditivo.numero}</p>
+                          {ehUltimo ? (
+                            <Badge variant="success">Vigência atual</Badge>
+                          ) : (
+                            <Badge variant="muted">Histórico</Badge>
+                          )}
+                        </div>
+                        <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+                          <div className="flex gap-1.5">
+                            <dt>Data do aditivo:</dt>
+                            <dd className="text-foreground">{formatarData(aditivo.data_aditivo)}</dd>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <dt>Nova vigência:</dt>
+                            <dd className="text-foreground">
+                              {formatarData(aditivo.data_inicio)} a {formatarData(aditivo.data_fim)}
+                            </dd>
+                          </div>
+                          {aditivo.observacoes && (
+                            <div className="flex gap-1.5">
+                              <dt>Observações:</dt>
+                              <dd className="text-foreground">{aditivo.observacoes}</dd>
+                            </div>
+                          )}
+                          <div className="flex gap-1.5">
+                            <dt>Registrado em:</dt>
+                            <dd className="text-foreground">{formatarDataHora(aditivo.criado_em)}</dd>
+                          </div>
+                        </dl>
+                        {ehUltimo && diasAditivo !== null && (
+                          <p
+                            className={`mt-1 text-xs font-medium ${
+                              diasAditivo < 0
+                                ? "text-destructive"
+                                : diasAditivo <= 60
+                                  ? "text-amber-700"
+                                  : "text-muted-foreground"
+                            }`}
+                          >
+                            {diasAditivo < 0
+                              ? `Vigência encerrada há ${Math.abs(diasAditivo)} dia(s).`
+                              : `Faltam ${diasAditivo} dia(s) para o término da vigência.`}
+                          </p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle className="text-base">Observações</CardTitle>
             </CardHeader>
@@ -242,6 +463,94 @@ export default function ContratoDetalhe() {
           </p>
         </>
       )}
+
+      <Dialog
+        aberto={dialogoAditivo}
+        titulo="Aditivar contrato"
+        descricao={
+          contrato
+            ? `Informe os dados do aditivo do contrato ${contrato.numero}. A nova vigência será aplicada ao contrato.`
+            : undefined
+        }
+        aoFechar={() => setDialogoAditivo(false)}
+        rodape={
+          <>
+            <Button variant="outline" onClick={() => setDialogoAditivo(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void salvarAditivo()} disabled={salvando}>
+              {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
+              Registrar aditivo
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {erroFormulario && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <span>{erroFormulario}</span>
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="aditivo-numero">Número do aditivo *</Label>
+              <Input
+                id="aditivo-numero"
+                className="mt-1"
+                value={formulario.numero}
+                onChange={(evento) => alterar("numero", evento.target.value)}
+                placeholder="Ex.: 001/2026"
+              />
+            </div>
+            <div>
+              <Label htmlFor="aditivo-data">Data do aditivo *</Label>
+              <Input
+                id="aditivo-data"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formulario.data_aditivo}
+                onChange={(evento) => alterar("data_aditivo", evento.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="aditivo-inicio">Início da nova vigência</Label>
+              <Input
+                id="aditivo-inicio"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formulario.data_inicio}
+                onChange={(evento) => alterar("data_inicio", evento.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="aditivo-fim">Término da nova vigência *</Label>
+              <Input
+                id="aditivo-fim"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formulario.data_fim}
+                onChange={(evento) => alterar("data_fim", evento.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="aditivo-observacoes">Observações</Label>
+            <Textarea
+              id="aditivo-observacoes"
+              className="mt-1"
+              value={formulario.observacoes}
+              onChange={(evento) => alterar("observacoes", evento.target.value)}
+              placeholder="Objeto do aditivo, justificativa, base legal…"
+            />
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

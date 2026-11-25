@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useAuth, type Papel } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatarData } from "@/lib/format";
+import ModalNotificacoes from "@/components/notificacoes/ModalNotificacoes";
 
 interface Atalho {
   titulo: string;
@@ -94,6 +95,7 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
+      <ModalNotificacoes />
       <header className="rounded-lg border border-border bg-card p-5 sm:p-6">
         <p className="text-sm text-muted-foreground">
           Secretaria de Planejamento e Finanças – Prefeitura de Ourinhos/SP

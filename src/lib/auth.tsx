@@ -162,6 +162,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sair = useCallback(async () => {
     await supabase.auth.signOut();
+    // Libera a exibição do painel de notificações para o próximo login.
+    Object.keys(window.sessionStorage)
+      .filter((chave) => chave.startsWith("sispatri:popup-notificacoes:"))
+      .forEach((chave) => window.sessionStorage.removeItem(chave));
     setPerfil(null);
     setPapeis([]);
   }, []);

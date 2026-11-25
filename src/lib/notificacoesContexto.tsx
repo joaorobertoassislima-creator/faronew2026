@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { contarNaoLidas } from "@/lib/notificacoes";
+import { contarNaoLidas, gerarAvisosVencimento } from "@/lib/notificacoes";
 import { useAuth } from "@/lib/auth";
 
 interface ContextoNotificacoes {
@@ -30,7 +30,11 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       setNaoLidas(0);
       return;
     }
-    void contarNaoLidas(usuario.id)
+    // Gera (de forma idempotente) os avisos de vencimento de contratos
+    // antes de contar as não lidas, para que os prazos apareçam no sistema.
+    void gerarAvisosVencimento()
+      .catch(() => undefined)
+      .then(() => contarNaoLidas(usuario.id))
       .then(setNaoLidas)
       .catch(() => undefined);
   }, [usuario?.id]);

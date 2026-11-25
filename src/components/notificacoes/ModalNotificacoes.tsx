@@ -25,6 +25,7 @@ const estiloTipo: Record<string, string> = {
   sucesso: "border-emerald-200 bg-emerald-50 text-emerald-800",
   alteracao: "border-amber-200 bg-amber-50 text-amber-800",
   exclusao: "border-destructive/30 bg-destructive/10 text-destructive",
+  vencimento: "border-orange-200 bg-orange-50 text-orange-800",
   info: "border-border bg-muted text-muted-foreground",
 };
 
@@ -120,7 +121,11 @@ export default function ModalNotificacoes() {
             Fechar
           </Button>
           <Button asChild>
-            <Link to="/notificacoes" onClick={() => setAberto(false)}>
+            <Link
+              to="/notificacoes"
+              onClick={() => setAberto(false)}
+              title="Abrir a central de notificações"
+            >
               Ver central de notificações
             </Link>
           </Button>
@@ -175,7 +180,7 @@ export default function ModalNotificacoes() {
                     onClick={() => setAberto(false)}
                     className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
                   >
-                    Ver no sistema
+                    {notificacao.contrato_id ? "Ver contrato" : "Ver no sistema"}
                   </Link>
                 )}
               </div>

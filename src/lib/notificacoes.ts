@@ -2,7 +2,12 @@
 
 import { supabase } from "@/lib/supabase";
 
-export type TipoNotificacao = "info" | "sucesso" | "alteracao" | "exclusao";
+export type TipoNotificacao =
+  | "info"
+  | "sucesso"
+  | "alteracao"
+  | "exclusao"
+  | "vencimento";
 
 export interface Notificacao {
   id: string;
@@ -13,9 +18,14 @@ export interface Notificacao {
   link: string | null;
   lida: boolean;
   criado_em: string;
+  /** Contrato relacionado ao aviso (ex.: vencimento). */
+  contrato_id: string | null;
+  /** Prazo em dias ao qual o aviso se refere (30, 60 ou 90). */
+  prazo_dias: number | null;
 }
 
-const CAMPOS = "id, usuario_id, titulo, mensagem, tipo, link, lida, criado_em";
+const CAMPOS =
+  "id, usuario_id, titulo, mensagem, tipo, link, lida, criado_em, contrato_id, prazo_dias";
 
 /** Gera os avisos automáticos de vencimento de contratos (idempotente). */
 export async function gerarAvisosVencimento(): Promise<void> {
@@ -79,6 +89,8 @@ export function rotuloTipo(tipo: string): string {
       return "Alteração";
     case "exclusao":
       return "Exclusão";
+    case "vencimento":
+      return "Vencimento";
     default:
       return "Aviso";
   }

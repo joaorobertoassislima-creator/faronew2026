@@ -817,9 +817,7 @@ export default function ContratoDetalhe() {
                   Itens do Contrato
                 </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Itens do PCA (nível 4) vinculados a este contrato. O mesmo
-                  item pode ser vinculado ou excluído tanto pela página do PCA
-                  quanto por aqui.
+                  Itens do PCA vinculados a este contrato.
                 </p>
               </div>
               <Button

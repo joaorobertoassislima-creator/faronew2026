@@ -64,6 +64,12 @@ export async function marcarComoLida(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/** Marca uma notificação como não lida. */
+export async function marcarComoNaoLida(id: string): Promise<void> {
+  const { error } = await supabase.from("notificacoes").update({ lida: false }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 /** Marca todas as notificações do usuário como lidas. */
 export async function marcarTodasComoLidas(usuarioId: string): Promise<void> {
   const { error } = await supabase

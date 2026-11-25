@@ -5,6 +5,7 @@ import {
   BellOff,
   CheckCheck,
   Eye,
+  EyeOff,
   Loader2,
   Trash2,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import {
   gerarAvisosVencimento,
   listarNotificacoes,
   marcarComoLida,
+  marcarComoNaoLida,
   marcarTodasComoLidas,
   rotuloTipo,
   type Notificacao,
@@ -78,6 +80,26 @@ export default function Notificacoes() {
         );
         recarregar();
         toast("Notificação marcada como lida.", "sucesso");
+      }
+    } catch (erro) {
+      toast(mensagemErro(erro), "erro");
+    } finally {
+      setProcessando(null);
+    }
+  }
+
+  async function marcarNaoLida(notificacao: Notificacao) {
+    setProcessando(notificacao.id);
+    try {
+      if (notificacao.lida) {
+        await marcarComoNaoLida(notificacao.id);
+        setLista((atual) =>
+          atual.map((item) =>
+            item.id === notificacao.id ? { ...item, lida: false } : item,
+          ),
+        );
+        recarregar();
+        toast("Notificação marcada como não lida.", "sucesso");
       }
     } catch (erro) {
       toast(mensagemErro(erro), "erro");
@@ -218,6 +240,20 @@ export default function Notificacoes() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Marcar como não lida"
+                  title="Marcar como não lida"
+                  disabled={!notificacao.lida || processando === notificacao.id}
+                  onClick={() => marcarNaoLida(notificacao)}
+                >
+                  {processando === notificacao.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
                   )}
                 </Button>
                 <Button

@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
+  FileText,
   Layers,
   Link2,
   Loader2,
@@ -27,7 +28,11 @@ import Dialog from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { traduzirErroSupabase } from "@/lib/erros";
 import ModalPesquisaContrato from "@/components/pca/ModalPesquisaContrato";
+import ModalDocumentoItem, {
+  type DadosDocumentoItem,
+} from "@/components/pca/ModalDocumentoItem";
 import {
+  formatarDataPCA,
   formatarMoedaPCA,
   formatarQuantidadePCA,
   proximoCodigoItemContrato,
@@ -173,6 +178,10 @@ export default function PCAItens() {
   const [vinculando, setVinculando] = useState<ItemContratoPCA | null>(null);
   /** Pesquisa de contrato aberta a partir do formulário do nível 4. */
   const [pesquisandoContrato, setPesquisandoContrato] = useState(false);
+  /** Documento do item (nível 3) aberto para copiar e colar. */
+  const [documentoItem, setDocumentoItem] = useState<DadosDocumentoItem | null>(
+    null,
+  );
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<{
@@ -412,6 +421,30 @@ export default function PCAItens() {
             classe_id: classeId,
             codigo: proximoCodigoItemContrato(codigosPais, prefixoClasse),
           },
+    });
+  }
+
+  /**
+   * Monta o documento do item (nível 3 - classe/grupo) com os dados do
+   * catálogo, do item específico e da classe, para copiar e colar no Word.
+   */
+  function abrirDocumentoItem(classe: ClassePCA) {
+    const especifico = especificos.find(
+      (item) => item.id === classe.item_especifico_id,
+    );
+    const valorEspecifico = (
+      classesPorEspecifico[classe.item_especifico_id] ?? []
+    ).reduce((soma, item) => soma + Number(item.valor ?? 0), 0);
+
+    setDocumentoItem({
+      idPca: catalogo?.id_pncp ?? "—",
+      dataPublicacao: formatarDataPCA(catalogo?.data_publicacao),
+      idItemPncp: especifico?.id_pncp || "Não informado",
+      descricaoEspecifico: especifico?.descricao ?? "—",
+      codigoClasse: classe.codigo,
+      descricaoClasse: classe.descricao,
+      idDocumentoDemanda: especifico?.id_documento_demanda || "Não informado",
+      valorEspecifico: formatarMoedaPCA(valorEspecifico),
     });
   }
 
@@ -1043,6 +1076,16 @@ export default function PCAItens() {
                                               <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                title="Gerar documento do item"
+                                                onClick={() =>
+                                                  abrirDocumentoItem(classe)
+                                                }
+                                              >
+                                                <FileText className="h-4 w-4" />
+                                              </Button>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 title="Editar classe"
                                                 onClick={() =>
                                                   abrirClasse(
@@ -1669,6 +1712,12 @@ export default function PCAItens() {
             ? dialogo.dados.contrato_id
             : null)
         }
+      />
+
+      <ModalDocumentoItem
+        aberto={documentoItem !== null}
+        dados={documentoItem}
+        aoFechar={() => setDocumentoItem(null)}
       />
     </div>
   );

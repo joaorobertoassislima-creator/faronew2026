@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Layers,
+  Link2,
   Loader2,
   Pencil,
   Plus,
@@ -35,14 +36,18 @@ import { Badge } from "@/components/ui/badge";
 import Dialog from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { traduzirErroSupabase } from "@/lib/erros";
+import ModalPesquisaContrato from "@/components/pca/ModalPesquisaContrato";
 import {
   formatarMoedaPCA,
   formatarQuantidadePCA,
+  proximoCodigoItemContrato,
   type CatalogoPCA,
   type ClassePCA,
+  type ItemContratoPCA,
   type ItemEspecificoPCA,
   type ItemGeralPCA,
 } from "@/lib/pca";
+import { type Contrato } from "@/lib/contratos";
 
 interface FormularioGeral {
   id: string | null;
@@ -57,6 +62,15 @@ interface FormularioEspecifico {
   descricao: string;
   id_pncp: string;
   id_documento_demanda: string;
+}
+
+/** Formulário do nível 4 - item código contrato. */
+interface FormularioItemContrato {
+  id: string | null;
+  classe_id: string;
+  codigo: string;
+  descricao: string;
+  contrato_id: string | null;
 }
 
 interface FormularioClasse {
@@ -110,6 +124,13 @@ const ESPECIFICO_VAZIO: FormularioEspecifico = {
   id_pncp: "",
   id_documento_demanda: "",
 };
+const ITEM_CONTRATO_VAZIO: FormularioItemContrato = {
+  id: null,
+  classe_id: "",
+  codigo: "",
+  descricao: "",
+  contrato_id: null,
+};
 const CLASSE_VAZIA: FormularioClasse = {
   id: null,
   item_especifico_id: "",
@@ -135,6 +156,8 @@ export default function PCAItens() {
   const [gerais, setGerais] = useState<ItemGeralPCA[]>([]);
   const [especificos, setEspecificos] = useState<ItemEspecificoPCA[]>([]);
   const [classes, setClasses] = useState<ClassePCA[]>([]);
+  const [itensContrato, setItensContrato] = useState<ItemContratoPCA[]>([]);
+  const [contratos, setContratos] = useState<Contrato[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
@@ -144,12 +167,14 @@ export default function PCAItens() {
     | { tipo: "geral"; dados: FormularioGeral }
     | { tipo: "especifico"; dados: FormularioEspecifico }
     | { tipo: "classe"; dados: FormularioClasse }
+    | { tipo: "itemContrato"; dados: FormularioItemContrato }
     | null
   >(null);
+  const [vinculando, setVinculando] = useState<ItemContratoPCA | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<{
-    tipo: "geral" | "especifico" | "classe";
+    tipo: "geral" | "especifico" | "classe" | "itemContrato";
     id: string;
     descricao: string;
   } | null>(null);
@@ -160,7 +185,14 @@ export default function PCAItens() {
     setCarregando(true);
     setErro(null);
 
-    const [catalogoRes, geraisRes, especificosRes, classesRes] = await Promise.all([
+    const [
+      catalogoRes,
+      geraisRes,
+      especificosRes,
+      classesRes,
+      itensContratoRes,
+      contratosRes,
+    ] = await Promise.all([
       supabase.from("pca_catalogos").select("*").eq("id", catalogoId).maybeSingle(),
       supabase
         .from("pca_itens_gerais")
@@ -177,6 +209,12 @@ export default function PCAItens() {
         .select("*")
         .eq("catalogo_id", catalogoId)
         .order("codigo"),
+      supabase
+        .from("pca_itens_contrato")
+        .select("*")
+        .eq("catalogo_id", catalogoId)
+        .order("codigo"),
+      supabase.from("contratos").select("*").order("numero").limit(500),
     ]);
 
     if (catalogoRes.error) {
@@ -191,6 +229,8 @@ export default function PCAItens() {
     setGerais((geraisRes.data as ItemGeralPCA[]) ?? []);
     setEspecificos((especificosRes.data as ItemEspecificoPCA[]) ?? []);
     setClasses((classesRes.data as ClassePCA[]) ?? []);
+    setItensContrato((itensContratoRes.data as ItemContratoPCA[]) ?? []);
+    setContratos((contratosRes.data as Contrato[]) ?? []);
     setCarregando(false);
   }, [catalogoId, toast]);
 
@@ -215,6 +255,21 @@ export default function PCAItens() {
     }
     return mapa;
   }, [classes]);
+
+  /** Nível 4 - itens código contrato agrupados por classe/grupo. */
+  const itensContratoPorClasse = useMemo(() => {
+    const mapa: Record<string, ItemContratoPCA[]> = {};
+    for (const item of itensContrato) {
+      (mapa[item.classe_id] ??= []).push(item);
+    }
+    return mapa;
+  }, [itensContrato]);
+
+  const contratosPorId = useMemo(() => {
+    const mapa: Record<string, Contrato> = {};
+    for (const contrato of contratos) mapa[contrato.id] = contrato;
+    return mapa;
+  }, [contratos]);
 
   const filtrados = useMemo(() => {
     if (!termo) return gerais;
@@ -333,6 +388,31 @@ export default function PCAItens() {
     });
   }
 
+  function abrirItemContrato(classeId: string, item?: ItemContratoPCA) {
+    setErroFormulario(null);
+    const codigosPais = (itensContratoPorClasse[classeId] ?? []).map(
+      (item) => item.codigo,
+    );
+    const classe = classes.find((item) => item.id === classeId);
+    const prefixoClasse = classe?.codigo ?? "";
+    setDialogo({
+      tipo: "itemContrato",
+      dados: item
+        ? {
+            id: item.id,
+            classe_id: item.classe_id,
+            codigo: item.codigo,
+            descricao: item.descricao,
+            contrato_id: item.contrato_id,
+          }
+        : {
+            ...ITEM_CONTRATO_VAZIO,
+            classe_id: classeId,
+            codigo: proximoCodigoItemContrato(codigosPais, prefixoClasse),
+          },
+    });
+  }
+
   async function salvar() {
     if (!dialogo) return;
     setSalvando(true);
@@ -403,7 +483,7 @@ export default function PCAItens() {
         setSalvando(false);
         return;
       }
-    } else {
+    } else if (dialogo.tipo === "classe") {
       const dados = dialogo.dados;
       if (!dados.item_especifico_id)
         erro = "Selecione o item específico da classe.";
@@ -436,6 +516,40 @@ export default function PCAItens() {
       const resultado = dados.id
         ? await supabase.from("pca_classes").update(payload).eq("id", dados.id)
         : await supabase.from("pca_classes").insert(payload);
+      if (resultado.error) {
+        const mensagem = traduzirErroSupabase(resultado.error.message);
+        setErroFormulario(mensagem);
+        toast(mensagem, "erro");
+        setSalvando(false);
+        return;
+      }
+    } else {
+      const dados = dialogo.dados;
+      if (!dados.classe_id)
+        erro = "Selecione a classe/grupo do item código contrato.";
+      if (!dados.codigo.trim())
+        erro = erro ?? "Informe o código do item código contrato.";
+      if (!dados.descricao.trim())
+        erro = erro ?? "Informe a descrição do item código contrato.";
+      if (erro) {
+        setErroFormulario(erro);
+        setSalvando(false);
+        return;
+      }
+      const payload = {
+        catalogo_id: catalogoId,
+        classe_id: dados.classe_id,
+        codigo: dados.codigo.trim(),
+        descricao: dados.descricao.trim(),
+        contrato_id: dados.contrato_id,
+        atualizado_em: new Date().toISOString(),
+      };
+      const resultado = dados.id
+        ? await supabase
+            .from("pca_itens_contrato")
+            .update(payload)
+            .eq("id", dados.id)
+        : await supabase.from("pca_itens_contrato").insert(payload);
       if (resultado.error) {
         const mensagem = traduzirErroSupabase(resultado.error.message);
         setErroFormulario(mensagem);
@@ -529,9 +643,15 @@ export default function PCAItens() {
           .eq("id", excluindo.id);
         if (res.error) erro = res.error;
       }
-    } else {
+    } else if (excluindo.tipo === "classe") {
       const res = await supabase
         .from("pca_classes")
+        .delete()
+        .eq("id", excluindo.id);
+      if (res.error) erro = res.error;
+    } else {
+      const res = await supabase
+        .from("pca_itens_contrato")
         .delete()
         .eq("id", excluindo.id);
       if (res.error) erro = res.error;
@@ -561,7 +681,11 @@ export default function PCAItens() {
           ? dialogo.dados.id
             ? "Editar classe/grupo"
             : "Nova classe/grupo"
-          : "";
+          : dialogo?.tipo === "itemContrato"
+            ? dialogo.dados.id
+              ? "Editar item código contrato"
+              : "Novo item código contrato"
+            : "";
 
   return (
     <div className="space-y-6">
@@ -835,9 +959,10 @@ export default function PCAItens() {
                                       classesDoEspecifico.map((classe) => (
                                         <div
                                           key={classe.id}
-                                          className="flex items-start gap-3 rounded-md border border-border bg-card p-3"
+                                          className="rounded-md border border-border bg-card"
                                         >
-                                          <div className="min-w-0 flex-1">
+                                          <div className="flex items-start gap-3 p-3">
+                                            <div className="min-w-0 flex-1">
                                             <p className="font-mono text-sm font-semibold text-primary">
                                               {classe.codigo}
                                             </p>
@@ -860,6 +985,16 @@ export default function PCAItens() {
                                           </Badge>
                                           {podeEditar && (
                                             <div className="flex items-center gap-1">
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                title="Adicionar item código contrato"
+                                                onClick={() =>
+                                                  abrirItemContrato(classe.id)
+                                                }
+                                              >
+                                                <Plus className="h-4 w-4" />
+                                              </Button>
                                               <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -891,6 +1026,94 @@ export default function PCAItens() {
                                               </Button>
                                             </div>
                                           )}
+                                          </div>
+                                          <div className="space-y-2 border-t border-border p-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                              Nível 4 - Itens código contrato
+                                            </p>
+                                            {(itensContratoPorClasse[classe.id] ??
+                                              []).length === 0 ? (
+                                              <p className="text-xs text-muted-foreground">
+                                                Nenhum item código contrato nesta
+                                                classe/grupo.
+                                              </p>
+                                            ) : (
+                                              (itensContratoPorClasse[classe.id] ??
+                                                []).map((item) => {
+                                                  const contratoVinculado =
+                                                    item.contrato_id
+                                                      ? contratosPorId[
+                                                          item.contrato_id
+                                                        ]
+                                                      : null;
+                                                  return (
+                                                    <div
+                                                      key={item.id}
+                                                      className="flex flex-wrap items-start gap-3 rounded-md border border-border bg-background p-3"
+                                                    >
+                                                      <div className="min-w-0 flex-1">
+                                                        <p className="font-mono text-xs font-semibold text-primary">
+                                                          {item.codigo}
+                                                        </p>
+                                                        <p className="text-sm">
+                                                          {item.descricao}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                          Contrato:{" "}
+                                                          {contratoVinculado
+                                                            ? `${contratoVinculado.numero} · ${contratoVinculado.objeto}`
+                                                            : "não vinculado"}
+                                                        </p>
+                                                      </div>
+                                                      <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        title="Vincular contrato"
+                                                        onClick={() =>
+                                                          setVinculando(item)
+                                                        }
+                                                      >
+                                                        <Link2 className="h-4 w-4" />
+                                                        Vincular contrato
+                                                      </Button>
+                                                      {podeEditar && (
+                                                        <div className="flex items-center gap-1">
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title="Editar item código contrato"
+                                                            onClick={() =>
+                                                              abrirItemContrato(
+                                                                classe.id,
+                                                                item,
+                                                              )
+                                                            }
+                                                          >
+                                                            <Pencil className="h-4 w-4" />
+                                                          </Button>
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive"
+                                                            title="Excluir item código contrato"
+                                                            onClick={() =>
+                                                              setExcluindo({
+                                                                tipo: "itemContrato",
+                                                                id: item.id,
+                                                                descricao:
+                                                                  item.descricao,
+                                                              })
+                                                            }
+                                                          >
+                                                            <Trash2 className="h-4 w-4" />
+                                                          </Button>
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })
+                                            )}
+                                          </div>
                                         </div>
                                       ))
                                     )}

@@ -50,6 +50,21 @@ export interface ClassePCA {
   atualizado_em?: string | null;
 }
 
+/**
+ * Nível 4 - Item código contrato.
+ * Fica abaixo da classe/grupo (nível 3) e pode ser vinculado a um contrato.
+ */
+export interface ItemContratoPCA {
+  id: string;
+  catalogo_id: string;
+  classe_id: string;
+  codigo: string;
+  descricao: string;
+  contrato_id: string | null;
+  criado_em?: string | null;
+  atualizado_em?: string | null;
+}
+
 export const STATUS_CATALOGO: { valor: string; rotulo: string }[] = [
   { valor: "rascunho", rotulo: "Rascunho" },
   { valor: "publicado", rotulo: "Publicado" },
@@ -101,6 +116,22 @@ export function formatarQuantidadePCA(
 export function exerciciosSugeridos(): number[] {
   const atual = new Date().getFullYear();
   return [atual + 1, atual, atual - 1, atual - 2];
+}
+
+/**
+ * Próximo código do nível 4 (item código contrato) dentro da classe/grupo.
+ * Formato: X.YY.ZZ.NNN (ex.: 1.01.01.001).
+ */
+export function proximoCodigoItemContrato(
+  codigos: string[],
+  prefixoClasse: string,
+): string {
+  const numeros = codigos
+    .filter((codigo) => codigo.startsWith(`${prefixoClasse}.`))
+    .map((codigo) => Number(codigo.split(".")[3]))
+    .filter((numero) => Number.isFinite(numero));
+  const proximo = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+  return `${prefixoClasse}.${String(proximo).padStart(3, "0")}`;
 }
 
 /** Gera o próximo código sequencial do nível a partir dos já existentes. */

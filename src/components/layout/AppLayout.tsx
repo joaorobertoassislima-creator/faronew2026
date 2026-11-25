@@ -62,7 +62,6 @@ const ITENS_MENU: ItemMenu[] = [
     rota: "/contratos",
     icone: FileSignature,
     papeis: ["administrador", "agente_compras", "auditor"],
-    disponivel: false,
   },
   {
     titulo: "Atas de Registro de Preço",

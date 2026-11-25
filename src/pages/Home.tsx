@@ -10,6 +10,7 @@ import {
   Truck,
   Users,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth, type Papel } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatarData } from "@/lib/format";
@@ -20,6 +21,7 @@ interface Atalho {
   icone: typeof Boxes;
   rota: string;
   papeis: Papel[];
+  disponivel?: boolean;
 }
 
 const ATALHOS: Atalho[] = [
@@ -50,6 +52,7 @@ const ATALHOS: Atalho[] = [
     icone: FileSignature,
     rota: "/contratos",
     papeis: ["administrador", "agente_compras", "auditor"],
+    disponivel: true,
   },
   {
     titulo: "Atas de Registro de Preço",
@@ -148,10 +151,20 @@ export default function Home() {
                   <CardDescription className="mt-2">{atalho.descricao}</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground">
-                    Módulo em construção
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
+                  {atalho.disponivel ? (
+                    <Link
+                      to={atalho.rota}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                    >
+                      Acessar módulo
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                      Módulo em construção
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  )}
                 </CardContent>
               </Card>
             );

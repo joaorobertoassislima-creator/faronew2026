@@ -30,6 +30,15 @@ export function formatarMoeda(valor: number | null | undefined): string {
   });
 }
 
+/** Converte "aaaa-mm-dd" em "dd/mm/aaaa" (para exibir e editar) */
+export function isoParaDataBr(valor: string | null | undefined): string {
+  if (!valor) return "";
+  const partes = valor.slice(0, 10).split("-");
+  if (partes.length !== 3) return "";
+  const [ano, mes, dia] = partes;
+  return `${dia}/${mes}/${ano}`;
+}
+
 /** Converte "dd/mm/aaaa" em "aaaa-mm-dd" (para envio ao banco) */
 export function dataParaIso(valor: string): string | null {
   const partes = valor.split("/");

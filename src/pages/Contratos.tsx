@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   FileSignature,
   Loader2,
@@ -94,6 +96,8 @@ export default function Contratos() {
   const [excluindo, setExcluindo] = useState<Contrato | null>(null);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
 
+  const [paginaContratos, setPaginaContratos] = useState(0);
+
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
@@ -153,6 +157,30 @@ export default function Contratos() {
         .includes(termo);
     });
   }, [contratos, busca, filtroStatus, filtroVigencia]);
+
+  // Lista paginada: os contratos mais recentes (maior número) aparecem primeiro,
+  // mostrando apenas os 4 últimos de cada página.
+  const CONTRATOS_POR_PAGINA = 4;
+  const listaOrdenada = useMemo(
+    () =>
+      [...filtrados].sort((a, b) =>
+        b.numero.localeCompare(a.numero, "pt-BR", { numeric: true }),
+      ),
+    [filtrados],
+  );
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(listaOrdenada.length / CONTRATOS_POR_PAGINA),
+  );
+  const paginaAtual = Math.min(paginaContratos, totalPaginas - 1);
+  const contratosDaPagina = listaOrdenada.slice(
+    paginaAtual * CONTRATOS_POR_PAGINA,
+    paginaAtual * CONTRATOS_POR_PAGINA + CONTRATOS_POR_PAGINA,
+  );
+
+  useEffect(() => {
+    setPaginaContratos(0);
+  }, [busca, filtroStatus, filtroVigencia, listaOrdenada.length]);
 
   const totais = useMemo(() => {
     const vigentes = contratos.filter((c) => statusEfetivo(c) === "vigente");
@@ -462,7 +490,7 @@ export default function Contratos() {
                 </tr>
               </thead>
               <tbody>
-                {filtrados.map((contrato) => {
+                {contratosDaPagina.map((contrato) => {
                   const dias = diasParaVencer(contrato.data_fim);
                   const status = statusEfetivo(contrato);
                   return (
@@ -546,7 +574,7 @@ export default function Contratos() {
 
           {/* Cartões (mobile) */}
           <div className="space-y-3 md:hidden">
-            {filtrados.map((contrato) => {
+            {contratosDaPagina.map((contrato) => {
               const dias = diasParaVencer(contrato.data_fim);
               const status = statusEfetivo(contrato);
               return (
@@ -618,6 +646,34 @@ export default function Contratos() {
               );
             })}
           </div>
+
+          {totalPaginas > 1 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <p className="text-sm text-muted-foreground">
+                Página {paginaAtual + 1} de {totalPaginas} · {listaOrdenada.length} contrato(s)
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaAtual === 0}
+                  onClick={() => setPaginaContratos((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anteriores
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaAtual >= totalPaginas - 1}
+                  onClick={() => setPaginaContratos((p) => Math.min(totalPaginas - 1, p + 1))}
+                >
+                  Próximos
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

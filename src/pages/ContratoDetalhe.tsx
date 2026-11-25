@@ -316,6 +316,15 @@ export default function ContratoDetalhe() {
                   valor={`${formatarDataISO(contrato.data_inicio)} a ${formatarDataISO(contrato.data_fim)}`}
                   icone={<CalendarDays className="h-3.5 w-3.5" />}
                 />
+                <Linha
+                  rotulo="Vigência original"
+                  valor={
+                    contrato.vigencia_original_inicio || contrato.vigencia_original_fim
+                      ? `${formatarDataISO(contrato.vigencia_original_inicio)} a ${formatarDataISO(contrato.vigencia_original_fim)}`
+                      : "Não informada"
+                  }
+                  icone={<CalendarDays className="h-3.5 w-3.5" />}
+                />
               </dl>
 
               {dias !== null && (

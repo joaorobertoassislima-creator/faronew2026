@@ -32,6 +32,9 @@ export interface Contrato {
   valor: number;
   data_inicio: string | null;
   data_fim: string | null;
+  /** Vigência original, registrada na criação e preservada pelos aditivos. */
+  vigencia_original_inicio: string | null;
+  vigencia_original_fim: string | null;
   status: StatusContrato;
   observacoes: string | null;
   criado_por: string | null;

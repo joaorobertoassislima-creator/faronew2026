@@ -43,6 +43,8 @@ interface Formulario {
   valor: string;
   data_inicio: string;
   data_fim: string;
+  vigencia_original_inicio: string;
+  vigencia_original_fim: string;
   status: string;
   observacoes: string;
 }
@@ -57,6 +59,8 @@ const FORMULARIO_VAZIO: Formulario = {
   valor: "",
   data_inicio: "",
   data_fim: "",
+  vigencia_original_inicio: "",
+  vigencia_original_fim: "",
   status: "vigente",
   observacoes: "",
 };
@@ -177,6 +181,8 @@ export default function Contratos() {
       valor: contrato.valor ? String(contrato.valor).replace(".", ",") : "",
       data_inicio: isoParaDataBr(contrato.data_inicio),
       data_fim: isoParaDataBr(contrato.data_fim),
+      vigencia_original_inicio: isoParaDataBr(contrato.vigencia_original_inicio),
+      vigencia_original_fim: isoParaDataBr(contrato.vigencia_original_fim),
       status: contrato.status,
       observacoes: contrato.observacoes ?? "",
     });
@@ -215,6 +221,26 @@ export default function Contratos() {
       setErroFormulario("A data de término deve ser posterior à data de início.");
       return;
     }
+    const originalInicioIso = formulario.vigencia_original_inicio
+      ? dataParaIso(formulario.vigencia_original_inicio)
+      : null;
+    const originalFimIso = formulario.vigencia_original_fim
+      ? dataParaIso(formulario.vigencia_original_fim)
+      : null;
+    if (formulario.vigencia_original_inicio && !originalInicioIso) {
+      setErroFormulario("Informe o início da vigência original no formato dd/mm/aaaa.");
+      return;
+    }
+    if (formulario.vigencia_original_fim && !originalFimIso) {
+      setErroFormulario("Informe o término da vigência original no formato dd/mm/aaaa.");
+      return;
+    }
+    if (originalInicioIso && originalFimIso && originalFimIso < originalInicioIso) {
+      setErroFormulario(
+        "O término da vigência original deve ser posterior ao seu início.",
+      );
+      return;
+    }
 
     setSalvando(true);
     setErroFormulario(null);
@@ -229,6 +255,13 @@ export default function Contratos() {
       valor: moedaParaNumero(formulario.valor),
       data_inicio: inicioIso,
       data_fim: fimIso,
+      // Vigência original: na criação assume a vigência informada quando não
+      // preenchida; na edição preserva o valor já registrado.
+      vigencia_original_inicio:
+        originalInicioIso ??
+        (editando ? editando.vigencia_original_inicio : inicioIso),
+      vigencia_original_fim:
+        originalFimIso ?? (editando ? editando.vigencia_original_fim : fimIso),
       status: formulario.status,
       observacoes: formulario.observacoes.trim() || null,
     };
@@ -721,6 +754,41 @@ export default function Contratos() {
               />
             </div>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="vigencia-original-inicio">
+                Vigência original — início
+              </Label>
+              <Input
+                id="vigencia-original-inicio"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formulario.vigencia_original_inicio}
+                onChange={(evento) =>
+                  alterar("vigencia_original_inicio", evento.target.value)
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="vigencia-original-fim">
+                Vigência original — término
+              </Label>
+              <Input
+                id="vigencia-original-fim"
+                className="mt-1"
+                placeholder="dd/mm/aaaa"
+                value={formulario.vigencia_original_fim}
+                onChange={(evento) =>
+                  alterar("vigencia_original_fim", evento.target.value)
+                }
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Campo informativo: registra a vigência inicial do contrato. Não é alterado
+            pelos aditivos e não interfere nos cálculos de status e vencimento.
+          </p>
 
           <div>
             <Label htmlFor="observacoes">Observações</Label>

@@ -413,6 +413,49 @@ export default function PCAItens() {
     });
   }
 
+  /** Abre a modal de pesquisa avançada de contratos para o item do nível 4. */
+  function abrirVinculacao(item: ItemContratoPCA) {
+    setErroFormulario(null);
+    setVinculando(item);
+  }
+
+  /** Grava o contrato escolhido na modal de pesquisa. */
+  async function vincularContrato(contrato: Contrato) {
+    if (!vinculando) return;
+    setSalvando(true);
+    const { error } = await supabase
+      .from("pca_itens_contrato")
+      .update({
+        contrato_id: contrato.id,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", vinculando.id);
+    setSalvando(false);
+    if (error) {
+      toast(traduzirErroSupabase(error.message), "erro");
+      return;
+    }
+    setVinculando(null);
+    toast(`Contrato ${contrato.numero} vinculado ao item.`);
+    await carregar();
+  }
+
+  /** Remove o vínculo do item com o contrato. */
+  async function desvincularContrato(item: ItemContratoPCA) {
+    setSalvando(true);
+    const { error } = await supabase
+      .from("pca_itens_contrato")
+      .update({ contrato_id: null, atualizado_em: new Date().toISOString() })
+      .eq("id", item.id);
+    setSalvando(false);
+    if (error) {
+      toast(traduzirErroSupabase(error.message), "erro");
+      return;
+    }
+    toast("Vínculo do contrato removido.");
+    await carregar();
+  }
+
   async function salvar() {
     if (!dialogo) return;
     setSalvando(true);
@@ -1033,10 +1076,25 @@ export default function PCAItens() {
                                             </p>
                                             {(itensContratoPorClasse[classe.id] ??
                                               []).length === 0 ? (
-                                              <p className="text-xs text-muted-foreground">
-                                                Nenhum item código contrato nesta
-                                                classe/grupo.
-                                              </p>
+                                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <p className="text-xs text-muted-foreground">
+                                                  Nenhum item código contrato nesta
+                                                  classe/grupo.
+                                                </p>
+                                                {podeEditar && (
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    title="Adicionar item código contrato"
+                                                    onClick={() =>
+                                                      abrirItemContrato(classe.id)
+                                                    }
+                                                  >
+                                                    <Plus className="h-4 w-4" />
+                                                    Adicionar item código contrato
+                                                  </Button>
+                                                )}
+                                              </div>
                                             ) : (
                                               (itensContratoPorClasse[classe.id] ??
                                                 []).map((item) => {
@@ -1065,17 +1123,34 @@ export default function PCAItens() {
                                                             : "não vinculado"}
                                                         </p>
                                                       </div>
-                                                      <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        title="Vincular contrato"
-                                                        onClick={() =>
-                                                          setVinculando(item)
-                                                        }
-                                                      >
-                                                        <Link2 className="h-4 w-4" />
-                                                        Vincular contrato
-                                                      </Button>
+                                                      {podeEditar && (
+                                                        <Button
+                                                          variant="outline"
+                                                          size="sm"
+                                                          title="Vincular contrato"
+                                                          onClick={() =>
+                                                            abrirVinculacao(item)
+                                                          }
+                                                        >
+                                                          <Link2 className="h-4 w-4" />
+                                                          Vincular contrato
+                                                        </Button>
+                                                      )}
+                                                      {podeEditar &&
+                                                        contratoVinculado && (
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            title="Remover vínculo do contrato"
+                                                            onClick={() =>
+                                                              void desvincularContrato(
+                                                                item,
+                                                              )
+                                                            }
+                                                          >
+                                                            Desvincular
+                                                          </Button>
+                                                        )}
                                                       {podeEditar && (
                                                         <div className="flex items-center gap-1">
                                                           <Button
@@ -1450,6 +1525,91 @@ export default function PCAItens() {
               </div>
             </div>
           )}
+
+          {dialogo?.tipo === "itemContrato" && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="itemcontrato_classe">Classe/grupo *</Label>
+                <Select
+                  id="itemcontrato_classe"
+                  value={dialogo.dados.classe_id}
+                  onChange={(evento) =>
+                    setDialogo({
+                      tipo: "itemContrato",
+                      dados: {
+                        ...dialogo.dados,
+                        classe_id: evento.target.value,
+                      },
+                    })
+                  }
+                >
+                  {classes.map((classe) => (
+                    <option key={classe.id} value={classe.id}>
+                      {classe.codigo} - {classe.descricao}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="itemcontrato_codigo">Código *</Label>
+                <Input
+                  id="itemcontrato_codigo"
+                  value={dialogo.dados.codigo}
+                  onChange={(evento) =>
+                    setDialogo({
+                      tipo: "itemContrato",
+                      dados: { ...dialogo.dados, codigo: evento.target.value },
+                    })
+                  }
+                  placeholder="1.01.01.001"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="itemcontrato_descricao">Descrição *</Label>
+                <Input
+                  id="itemcontrato_descricao"
+                  value={dialogo.dados.descricao}
+                  onChange={(evento) =>
+                    setDialogo({
+                      tipo: "itemContrato",
+                      dados: {
+                        ...dialogo.dados,
+                        descricao: evento.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Ex.: Item 001 - Fornecedor do contrato"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="itemcontrato_contrato">Contrato vinculado</Label>
+                <Select
+                  id="itemcontrato_contrato"
+                  value={dialogo.dados.contrato_id ?? ""}
+                  onChange={(evento) =>
+                    setDialogo({
+                      tipo: "itemContrato",
+                      dados: {
+                        ...dialogo.dados,
+                        contrato_id: evento.target.value || null,
+                      },
+                    })
+                  }
+                >
+                  <option value="">Nenhum contrato vinculado</option>
+                  {contratos.map((contrato) => (
+                    <option key={contrato.id} value={contrato.id}>
+                      {contrato.numero} · {contrato.objeto}
+                    </option>
+                  ))}
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Depois de salvar o item, use o botão “Vincular contrato” na
+                  lista para escolher o contrato pela pesquisa avançada.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </Dialog>
 
@@ -1481,11 +1641,20 @@ export default function PCAItens() {
               ? "item geral"
               : excluindo?.tipo === "especifico"
                 ? "item específico"
-                : "classe/grupo"}
+                : excluindo?.tipo === "classe"
+                  ? "classe/grupo"
+                  : "item código contrato"}
           </strong>{" "}
           <strong>{excluindo?.descricao}</strong>?
         </p>
       </Dialog>
+
+      <ModalPesquisaContrato
+        aberto={vinculando !== null}
+        aoFechar={() => setVinculando(null)}
+        aoSelecionar={(contrato) => void vincularContrato(contrato)}
+        contratoSelecionadoId={vinculando?.contrato_id ?? null}
+      />
     </div>
   );
 }

@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Loader2,
-  Search,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Loader2, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { traduzirErroSupabase } from "@/lib/erros";
 import { Button } from "@/components/ui/button";
@@ -13,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Dialog from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { formatarData, formatarMoeda } from "@/lib/format";
 import {
   rotuloStatus,
   varianteStatus,
@@ -21,11 +14,18 @@ import {
 } from "@/lib/contratos";
 
 interface Props {
+  /** Abre/fecha a modal. */
   aberto: boolean;
+  /** Callback de fechamento. */
   aoFechar: () => void;
+  /** Recebe o contrato escolhido na tabela. */
   aoSelecionar: (contrato: Contrato) => void;
-  /** Contrato já vinculado ao item, destacado na listagem. */
+  /** Contrato já vinculado, destacado na listagem. */
   contratoSelecionadoId?: string | null;
+  /** Título exibido no topo da modal. */
+  titulo?: string;
+  /** Descrição exibida abaixo do título. */
+  descricao?: string;
 }
 
 /** Colunas com filtro individual (balão com "Contém:"). */
@@ -34,16 +34,30 @@ const COLUNAS_FILTRO = [
   { chave: "objeto", rotulo: "Objeto" },
   { chave: "fornecedor", rotulo: "Fornecedor" },
   { chave: "modalidade", rotulo: "Modalidade" },
-  { chave: "processo", rotulo: "Processo" },
+  { chave: "valor", rotulo: "Valor" },
 ] as const;
 
 type ChaveFiltro = (typeof COLUNAS_FILTRO)[number]["chave"];
 
 const POR_PAGINA = 10;
 
+function formatarValor(valor: number | null | undefined): string {
+  if (valor === null || valor === undefined) return "—";
+  return Number(valor).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 function textoColuna(contrato: Contrato, chave: ChaveFiltro): string {
-  if (chave === "processo") return contrato.processo ?? "";
-  return String(contrato[chave] ?? "");
+  switch (chave) {
+    case "valor":
+      return formatarValor(contrato.valor);
+    case "fornecedor":
+      return contrato.fornecedor ?? "";
+    default:
+      return String(contrato[chave] ?? "");
+  }
 }
 
 /**
@@ -54,7 +68,9 @@ export default function ModalPesquisaContrato({
   aberto,
   aoFechar,
   aoSelecionar,
-  contratoSelecionadoId = null,
+  contratoSelecionadoId,
+  titulo = "Pesquisa avançada de contratos",
+  descricao = "Use os ícones de funil nos cabeçalhos para filtrar colunas. Selecione um contrato pelo botão Selecionar ou com duplo clique na linha.",
 }: Props) {
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -96,13 +112,12 @@ export default function ModalPesquisaContrato({
     return contratos.filter((contrato) => {
       if (termo) {
         const alvo = [
-          contrato.numero,
-          contrato.objeto,
-          contrato.fornecedor,
+          contrato.numero ?? "",
+          contrato.objeto ?? "",
+          contrato.fornecedor ?? "",
           contrato.cnpj ?? "",
-          contrato.modalidade,
-          contrato.processo ?? "",
-          contrato.status,
+          contrato.modalidade ?? "",
+          contrato.status ?? "",
         ]
           .join(" ")
           .toLowerCase();
@@ -191,8 +206,8 @@ export default function ModalPesquisaContrato({
   return (
     <Dialog
       aberto={aberto}
-      titulo="Pesquisa avançada de contratos"
-      descricao="Use os ícones de funil nos cabeçalhos para filtrar colunas. Selecione um contrato pelo botão Selecionar ou com duplo clique na linha."
+      titulo={titulo}
+      descricao={descricao}
       aoFechar={aoFechar}
       largura="max-w-5xl"
       rodape={
@@ -214,7 +229,7 @@ export default function ModalPesquisaContrato({
             <Input
               id="busca-contrato"
               className="pl-9"
-              placeholder="Número, objeto, fornecedor, modalidade, processo…"
+              placeholder="Número, objeto, fornecedor, modalidade…"
               value={busca}
               onChange={(evento) => {
                 setBusca(evento.target.value);
@@ -243,8 +258,7 @@ export default function ModalPesquisaContrato({
                   {COLUNAS_FILTRO.map((coluna) =>
                     cabecalhoComFiltro(coluna.chave, coluna.rotulo),
                   )}
-                  <th className="px-3 py-3 font-medium">Vigência</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
+                  <th className="px-3 py-3 font-medium">Situação</th>
                   <th className="px-3 py-3 text-right font-medium">Ações</th>
                 </tr>
               </thead>
@@ -252,7 +266,7 @@ export default function ModalPesquisaContrato({
                 {daPagina.length === 0 && (
                   <tr>
                     <td
-                      colSpan={COLUNAS_FILTRO.length + 3}
+                      colSpan={COLUNAS_FILTRO.length + 2}
                       className="px-3 py-8 text-center text-sm text-muted-foreground"
                     >
                       Nenhum contrato encontrado com os filtros selecionados.
@@ -264,26 +278,19 @@ export default function ModalPesquisaContrato({
                     key={contrato.id}
                     onDoubleClick={() => selecionar(contrato)}
                     className={`cursor-pointer border-t border-border hover:bg-muted/40 ${
-                      contrato.id === contratoSelecionadoId
-                        ? "bg-primary/5"
-                        : ""
+                      contrato.id === contratoSelecionadoId ? "bg-primary/5" : ""
                     }`}
                   >
-                    <td className="px-3 py-2 font-medium">{contrato.numero}</td>
-                    <td className="px-3 py-2">{contrato.objeto}</td>
-                    <td className="px-3 py-2">{contrato.fornecedor}</td>
+                    <td className="px-3 py-2 font-medium whitespace-nowrap">
+                      {contrato.numero}
+                    </td>
+                    <td className="px-3 py-2">{contrato.objeto ?? "—"}</td>
+                    <td className="px-3 py-2">{contrato.fornecedor ?? "—"}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      {contrato.modalidade}
+                      {contrato.modalidade ?? "—"}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      {contrato.processo ?? "—"}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
-                      {formatarData(contrato.data_inicio)} →{" "}
-                      {formatarData(contrato.data_fim)}
-                      <span className="ml-2">
-                        {formatarMoeda(Number(contrato.valor ?? 0))}
-                      </span>
+                      {formatarValor(contrato.valor)}
                     </td>
                     <td className="px-3 py-2">
                       <Badge variant={varianteStatus(contrato.status)}>
@@ -309,8 +316,7 @@ export default function ModalPesquisaContrato({
         {totalPaginas > 1 && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Página {paginaAtual + 1} de {totalPaginas} ·{" "}
-              {filtrados.length} contrato(s)
+              Página {paginaAtual + 1} de {totalPaginas} · {filtrados.length} contrato(s)
             </p>
             <div className="flex gap-2">
               <Button

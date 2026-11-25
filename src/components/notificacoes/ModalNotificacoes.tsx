@@ -44,18 +44,17 @@ export default function ModalNotificacoes() {
 
   const carregar = useCallback(async () => {
     if (!usuario?.id) return;
+    // Exibe o painel grande uma vez a cada login, na entrada na página inicial,
+    // mesmo quando não houver notificações pendentes.
+    const chave = `sispatri:popup-notificacoes:${usuario.id}`;
+    if (window.sessionStorage.getItem(chave) !== "1") {
+      window.sessionStorage.setItem(chave, "1");
+      setAberto(true);
+    }
     setCarregando(true);
     try {
       const dados = await listarNotificacoes(usuario.id);
       setLista(dados);
-      // Exibe o painel grande uma vez a cada login, na entrada na página inicial.
-      const chave = `sispatri:popup-notificacoes:${usuario.id}`;
-      const jaMostrou = window.sessionStorage.getItem(chave) === "1";
-      const temNaoLidas = dados.some((item) => !item.lida);
-      if (temNaoLidas && !jaMostrou) {
-        window.sessionStorage.setItem(chave, "1");
-        setAberto(true);
-      }
       recarregar();
     } catch (erro) {
       toast(mensagemErro(erro), "erro");
@@ -138,8 +137,10 @@ export default function ModalNotificacoes() {
       {!carregando && naoLidas.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-10 text-center">
           <BellRing className="h-8 w-8 text-muted-foreground/60" />
+          <p className="text-sm font-medium">Você está em dia!</p>
           <p className="text-sm text-muted-foreground">
-            Nenhuma notificação nova por aqui no momento.
+            Não há notificações pendentes no momento. A central de notificações guarda o histórico
+            completo.
           </p>
         </div>
       )}

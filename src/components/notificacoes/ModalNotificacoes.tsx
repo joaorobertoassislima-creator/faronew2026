@@ -106,7 +106,7 @@ export default function ModalNotificacoes() {
   return (
     <Dialog
       aberto={aberto}
-      titulo="Você tem novidades no sistema"
+      titulo="Suas Notificações"
       descricao={
         naoLidas.length
           ? `${naoLidas.length} notificaç${naoLidas.length > 1 ? "ões" : "ão"} aguardando leitura.`
@@ -139,8 +139,7 @@ export default function ModalNotificacoes() {
           <BellRing className="h-8 w-8 text-muted-foreground/60" />
           <p className="text-sm font-medium">Você está em dia!</p>
           <p className="text-sm text-muted-foreground">
-            Não há notificações pendentes no momento. A central de notificações guarda o histórico
-            completo.
+            Não há notificações pendentes no momento.
           </p>
         </div>
       )}

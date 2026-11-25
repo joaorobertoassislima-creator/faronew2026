@@ -10,6 +10,7 @@ import ContratoDetalhe from "@/pages/ContratoDetalhe";
 import Fornecedores from "@/pages/Fornecedores";
 import PCA from "@/pages/PCA";
 import PCAItens from "@/pages/PCAItens";
+import PCAImportar from "@/pages/PCAImportar";
 import Perfil from "@/pages/Perfil";
 import Notificacoes from "@/pages/Notificacoes";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
@@ -126,6 +127,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <PCAItens />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/pca/:catalogoId/importar"
+        element={
+          <RotaProtegida>
+            <PCAImportar />
           </RotaProtegida>
         }
       />

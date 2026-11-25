@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Search,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -587,6 +588,14 @@ export default function PCAItens() {
             <RefreshCw className="h-4 w-4" />
             Atualizar
           </Button>
+          {podeEditar && (
+            <Button variant="outline" asChild>
+              <Link to={`/pca/${catalogoId}/importar`}>
+                <Upload className="h-4 w-4" />
+                Importar CSV
+              </Link>
+            </Button>
+          )}
           {podeEditar && (
             <Button onClick={() => abrirGeral()}>
               <Plus className="h-4 w-4" />

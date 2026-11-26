@@ -9,6 +9,10 @@ import { PAPEIS, type Papel } from "@/lib/auth";
  * validam se quem chama é administrador. A criação de contas e a redefinição
  * de senha exigem a API administrativa do Auth e, por isso, ficam na Edge
  * Function "gerenciar-usuarios".
+ *
+ * As funções de escrita devolvem `null` quando tudo corre bem e a mensagem de
+ * erro quando algo falha, para que a tela possa exibir o problema dentro do
+ * modal sem try/catch espalhado.
  */
 
 export interface UsuarioSistema {
@@ -137,10 +141,10 @@ export const listarDepartamentosSimples = listarDepartamentos;
 /**
  * Cria uma conta de usuário. Vai para a Edge Function "gerenciar-usuarios",
  * que usa a API administrativa do Auth (a senha nunca trafega para o navegador).
+ *
+ * Devolve `null` em caso de sucesso ou a mensagem de erro.
  */
-export async function criarUsuario(
-  dados: DadosUsuario,
-): Promise<{ id?: string; mensagem?: string }> {
+export async function criarUsuario(dados: DadosUsuario): Promise<string | null> {
   const { data, error } = await supabase.functions.invoke("gerenciar-usuarios", {
     body: {
       acao: "criar",
@@ -157,27 +161,45 @@ export async function criarUsuario(
     },
   });
 
-  if (error) throw new Error(mensagemDeErro(error));
+  if (error) return mensagemDeErro(error);
   const retorno = (data ?? {}) as { id?: string; mensagem?: string; erro?: string };
-  if (retorno.erro) throw new Error(retorno.erro);
-  return retorno;
+  if (retorno.erro) return retorno.erro;
+  return null;
 }
 
-/** Redefine a senha de um usuário existente. */
-export async function redefinirSenha(userId: string, senha: string): Promise<void> {
+/**
+ * Redefine a senha de um usuário existente.
+ *
+ * Devolve `null` em caso de sucesso ou a mensagem de erro.
+ */
+export async function redefinirSenhaUsuario(
+  userId: string,
+  senha: string,
+): Promise<string | null> {
   const { data, error } = await supabase.functions.invoke("gerenciar-usuarios", {
     body: { acao: "redefinir-senha", user_id: userId, senha },
   });
 
-  if (error) throw new Error(mensagemDeErro(error));
+  if (error) return mensagemDeErro(error);
   const retorno = (data ?? {}) as { mensagem?: string; erro?: string };
-  if (retorno.erro) throw new Error(retorno.erro);
+  if (retorno.erro) return retorno.erro;
+  return null;
 }
 
-/** Salva as alterações de perfil, vínculo e papéis de um usuário. */
-export async function atualizarUsuario(dados: DadosUsuario & { id: string }): Promise<void> {
+/** Alias de {@link redefinirSenhaUsuario}. */
+export const redefinirSenha = redefinirSenhaUsuario;
+
+/**
+ * Salva as alterações de perfil, vínculo e papéis de um usuário.
+ *
+ * Devolve `null` em caso de sucesso ou a mensagem de erro.
+ */
+export async function atualizarUsuario(
+  userId: string,
+  dados: DadosUsuario,
+): Promise<string | null> {
   const { error } = await supabase.rpc("atualizar_usuario", {
-    p_user_id: dados.id,
+    p_user_id: userId,
     p_nome: dados.nome ?? "",
     p_matricula: dados.matricula ?? "",
     p_cargo: dados.cargo ?? "",
@@ -189,17 +211,26 @@ export async function atualizarUsuario(dados: DadosUsuario & { id: string }): Pr
     p_remover_departamento: !dados.departamento_id,
   });
 
-  if (error) throw new Error(mensagemDeErro(error));
+  if (error) return mensagemDeErro(error);
+  return null;
 }
 
-/** Ativa ou desativa o acesso de um usuário, sem alterar os demais dados. */
-export async function alterarStatusUsuario(userId: string, ativo: boolean): Promise<void> {
+/**
+ * Ativa ou desativa o acesso de um usuário, sem alterar os demais dados.
+ *
+ * Devolve `null` em caso de sucesso ou a mensagem de erro.
+ */
+export async function alterarStatusUsuario(
+  userId: string,
+  ativo: boolean,
+): Promise<string | null> {
   const { error } = await supabase.rpc("atualizar_usuario", {
     p_user_id: userId,
     p_ativo: ativo,
   });
 
-  if (error) throw new Error(mensagemDeErro(error));
+  if (error) return mensagemDeErro(error);
+  return null;
 }
 
 /** Alias de {@link alterarStatusUsuario}. */

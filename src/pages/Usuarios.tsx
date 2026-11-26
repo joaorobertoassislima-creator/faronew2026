@@ -68,23 +68,52 @@ export default function Usuarios() {
 
   const carregar = useCallback(async () => {
     setCarregando(true);
-    try {
-      const [listaUsuarios, listaPermissoes, listaDepartamentos] = await Promise.all([
+
+    // Cada consulta é tratada por conta própria: uma falha em permissões ou
+    // departamentos não pode impedir a exibição da lista de usuários.
+    const [resultadoUsuarios, resultadoPermissoes, resultadoDepartamentos] =
+      await Promise.allSettled([
         listarUsuarios(),
         listarPermissoes(),
         listarDepartamentos(),
       ]);
-      setUsuarios(listaUsuarios);
-      setPermissoes(listaPermissoes);
-      setDepartamentos(listaDepartamentos);
-    } catch (erro) {
+
+    if (resultadoUsuarios.status === "fulfilled") {
+      setUsuarios(resultadoUsuarios.value);
+    } else {
       toast(
-        erro instanceof Error ? erro.message : "Não foi possível carregar os usuários.",
+        resultadoUsuarios.reason instanceof Error
+          ? resultadoUsuarios.reason.message
+          : "Não foi possível carregar os usuários.",
         "erro",
       );
-    } finally {
-      setCarregando(false);
     }
+
+    if (resultadoPermissoes.status === "fulfilled") {
+      setPermissoes(resultadoPermissoes.value);
+    } else {
+      setPermissoes([]);
+      toast(
+        resultadoPermissoes.reason instanceof Error
+          ? resultadoPermissoes.reason.message
+          : "Não foi possível carregar as permissões.",
+        "erro",
+      );
+    }
+
+    if (resultadoDepartamentos.status === "fulfilled") {
+      setDepartamentos(resultadoDepartamentos.value);
+    } else {
+      setDepartamentos([]);
+      toast(
+        resultadoDepartamentos.reason instanceof Error
+          ? resultadoDepartamentos.reason.message
+          : "Não foi possível carregar os departamentos.",
+        "erro",
+      );
+    }
+
+    setCarregando(false);
   }, [toast]);
 
   useEffect(() => {

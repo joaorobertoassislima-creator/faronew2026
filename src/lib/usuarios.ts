@@ -120,7 +120,14 @@ export async function listarUsuarios(): Promise<UsuarioSistema[]> {
 export async function listarPermissoes(): Promise<PermissaoTabela[]> {
   const { data, error } = await supabase.rpc("listar_permissoes");
   if (error) throw new Error(mensagemDeErro(error));
-  return (data ?? []) as PermissaoTabela[];
+
+  // O banco devolve o comando em maiúsculas (SELECT, INSERT...); a tela usa
+  // rótulos em minúsculas, por isso normalizamos aqui.
+  return ((data ?? []) as PermissaoTabela[]).map((item) => ({
+    ...item,
+    comando: String(item.comando ?? "").toLowerCase(),
+    papeis: Array.isArray(item.papeis) ? item.papeis : [],
+  }));
 }
 
 /** Lista os departamentos para preencher o campo de vínculo do usuário. */

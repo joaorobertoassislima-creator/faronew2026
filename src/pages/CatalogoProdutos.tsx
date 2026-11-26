@@ -339,9 +339,9 @@ export default function CatalogoProdutos() {
                   <thead>
                     <tr className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                       <th className="px-4 py-3">Produto</th>
-                      <th className="px-4 py-3">Categoria (ConPUB)</th>
-                      <th className="px-4 py-3">Contrato (GesCON)</th>
-                      <th className="px-4 py-3">Item PCA (Nível 4)</th>
+                      <th className="px-4 py-3">Categoria (PCA)</th>
+                      <th className="px-4 py-3">Contrato</th>
+                      <th className="px-4 py-3">Item PCA</th>
                       <th className="px-4 py-3">Saldo Original</th>
                       <th className="px-4 py-3">Controle de Lote</th>
                       <th className="px-4 py-3 text-right">Ações</th>

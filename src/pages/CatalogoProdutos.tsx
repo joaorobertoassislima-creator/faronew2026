@@ -218,10 +218,6 @@ export default function CatalogoProdutos() {
       toast("Informe o nome do produto.", "erro");
       return;
     }
-    if (!form.categoria_id) {
-      toast("Selecione a categoria (ConPUB) do produto.", "erro");
-      return;
-    }
     try {
       if (editando) {
         await atualizarProduto(editando.id, form);
@@ -509,24 +505,6 @@ export default function CatalogoProdutos() {
                   onChange={(e) => setForm((atual) => ({ ...atual, nome: e.target.value }))}
                   placeholder="Ex: Notebook Lenovo 14"
                 />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-sm font-medium">
-                  Categoria (ConPUB - PCA) <span className="text-destructive">*</span>
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={displayCategoria}
-                    onClick={() => abrirPesquisa("categoria")}
-                    placeholder="Clique na lupa para pesquisar a categoria..."
-                    className="cursor-pointer bg-muted/40"
-                  />
-                  <Button type="button" onClick={() => abrirPesquisa("categoria")}>
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
 
               <div>

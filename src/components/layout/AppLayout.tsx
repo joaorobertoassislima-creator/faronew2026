@@ -49,7 +49,6 @@ const ITENS_MENU: ItemMenu[] = [
     rota: "/estoque",
     icone: Boxes,
     papeis: ["administrador", "almoxarife", "agente_compras", "auditor"],
-    disponivel: false,
   },
   {
     titulo: "Entradas e Saídas",

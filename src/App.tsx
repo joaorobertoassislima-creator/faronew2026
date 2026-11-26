@@ -15,6 +15,7 @@ import Perfil from "@/pages/Perfil";
 import Notificacoes from "@/pages/Notificacoes";
 import CadastrosBasicos from "@/pages/CadastrosBasicos";
 import CatalogoProdutos from "@/pages/CatalogoProdutos";
+import Estoque from "@/pages/Estoque";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
@@ -153,6 +154,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <CatalogoProdutos />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/estoque"
+        element={
+          <RotaProtegida>
+            <Estoque />
           </RotaProtegida>
         }
       />

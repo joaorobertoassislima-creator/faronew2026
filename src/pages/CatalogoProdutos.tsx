@@ -563,7 +563,7 @@ export default function CatalogoProdutos() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Saldo Homologado (ARP)</label>
+                <label className="mb-1 block text-sm font-medium">Saldo</label>
                 <Input
                   type="number"
                   step="0.01"

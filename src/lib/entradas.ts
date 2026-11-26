@@ -232,8 +232,30 @@ export async function registrarEntrada(dados: DadosEntrada): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** Estorna a entrada: abate o estoque e remove o registro. */
+/**
+ * Estorna a entrada (funciona como exclusão): devolve o estoque ao valor anterior
+ * e remove o registro do histórico.
+ */
 export async function estornarEntrada(id: string): Promise<void> {
-  const { error } = await supabase.rpc("estornar_entrada_estoque", { p_id: id });
+  const { data, error } = await supabase.rpc("estornar_entrada_estoque", { p_id: id });
+
   if (error) throw new Error(error.message);
+  if (!data || (data as { ok?: boolean }).ok !== true) {
+    throw new Error("Não foi possível excluir a entrada. Tente novamente.");
+  }
+  if (error) throw new Error(error.message);
+
+  // Confere que o registro realmente saiu do histórico.
+  const { data: restante, error: erroConsulta } = await supabase
+    .from("estoque_movimentacoes")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (erroConsulta) throw new Error(erroConsulta.message);
+  if (restante) {
+    throw new Error(
+      "A entrada não pôde ser excluída. Atualize a lista para ver o saldo atual.",
+    );
+  }
 }

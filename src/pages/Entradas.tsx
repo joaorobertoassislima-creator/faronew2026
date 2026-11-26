@@ -93,6 +93,8 @@ export default function Entradas() {
   const [modalProduto, setModalProduto] = useState(false);
   const [modalContrato, setModalContrato] = useState(false);
   const [modalVisualizacao, setModalVisualizacao] = useState<EntradaRegistro | null>(null);
+  const [entradaParaEstornar, setEntradaParaEstornar] = useState<EntradaRegistro | null>(null);
+  const [estornando, setEstornando] = useState(false);
   const [form, setForm] = useState<FormEntrada>(FORM_VAZIO);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -177,20 +179,23 @@ export default function Entradas() {
     }
   }
 
-  async function confirmarEstorno(entrada: EntradaRegistro) {
-    const ok = window.confirm(
-      "Atenção: o estorno vai abater o estoque e excluir este registro. Confirma?",
-    );
-    if (!ok) {
-      setMensagem("A movimentação foi mantida.");
-      return;
-    }
+  function abrirEstorno(entrada: EntradaRegistro) {
+    setErro(null);
+    setEntradaParaEstornar(entrada);
+  }
+
+  async function confirmarEstorno() {
+    if (!entradaParaEstornar) return;
+    setEstornando(true);
     try {
-      await estornarEntrada(entrada.id);
-      setMensagem("Estorno de entrada realizado com sucesso!");
+      await estornarEntrada(entradaParaEstornar.id);
+      setEntradaParaEstornar(null);
+      setMensagem("Entrada excluída e estoque devolvido ao valor anterior!");
       await carregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao estornar entrada.");
+    } finally {
+      setEstornando(false);
     }
   }
 
@@ -354,11 +359,12 @@ export default function Entradas() {
                             <Button
                               size="sm"
                               variant="outline"
+                              title="Excluir a entrada e devolver o estoque ao valor anterior"
                               className="ml-2 text-destructive hover:text-destructive"
-                              onClick={() => void confirmarEstorno(entrada)}
+                              onClick={() => abrirEstorno(entrada)}
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
-                              Estornar
+                              Excluir
                             </Button>
                           </td>
                         </tr>
@@ -594,6 +600,54 @@ export default function Entradas() {
             <div className="flex justify-end border-t border-border bg-muted/20 px-5 py-3">
               <Button variant="outline" onClick={() => setModalVisualizacao(null)}>
                 Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {entradaParaEstornar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border bg-muted/30 px-5 py-3">
+              <h3 className="text-base font-semibold">Confirmar exclusão da entrada</h3>
+              <button
+                type="button"
+                onClick={() => setEntradaParaEstornar(null)}
+                className="rounded px-2 py-1 text-xs text-muted-foreground transition hover:bg-secondary"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="space-y-2 px-5 py-4 text-sm">
+              <p>
+                A entrada de <strong>{entradaParaEstornar.produto_nome}</strong> (
+                {formatarNumero(entradaParaEstornar.quantidade)}{" "}
+                {entradaParaEstornar.unidade_sigla ?? ""}) será excluída do histórico.
+              </p>
+              <p className="text-muted-foreground">
+                O estoque do produto e do lote voltam ao valor anterior ao recebimento. Esta ação
+                não pode ser desfeita.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-border bg-muted/20 px-5 py-3">
+              <Button
+                variant="outline"
+                onClick={() => setEntradaParaEstornar(null)}
+                disabled={estornando}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={() => void confirmarEstorno()}
+                disabled={estornando}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                {estornando ? "Excluindo..." : "Excluir entrada"}
               </Button>
             </div>
           </div>

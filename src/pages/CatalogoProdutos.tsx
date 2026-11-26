@@ -339,7 +339,6 @@ export default function CatalogoProdutos() {
                   <thead>
                     <tr className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                       <th className="px-4 py-3">Produto</th>
-                      <th className="px-4 py-3">Categoria (PCA)</th>
                       <th className="px-4 py-3">Contrato</th>
                       <th className="px-4 py-3">Item PCA</th>
                       <th className="px-4 py-3">Saldo Original</th>
@@ -357,20 +356,6 @@ export default function CatalogoProdutos() {
                           </span>
                           {linha.descricao && (
                             <p className="mt-1 text-xs text-muted-foreground">{linha.descricao}</p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {linha.categoriaCodigo ? (
-                            <>
-                              <span className="inline-block rounded bg-sky-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-sky-800">
-                                {linha.categoriaCodigo}
-                              </span>
-                              <p className="mt-1 text-[11px] text-muted-foreground">
-                                {(linha.categoriaDescricao ?? "").slice(0, 30)}...
-                              </p>
-                            </>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Não vinculado</span>
                           )}
                         </td>
                         <td className="px-4 py-3">

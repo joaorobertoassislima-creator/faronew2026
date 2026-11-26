@@ -286,7 +286,7 @@ export default function CatalogoProdutos() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border bg-muted/30">
-          <CardTitle className="text-base">Itens Vinculados (GesCON / ConPUB)</CardTitle>
+          <CardTitle className="text-base">Itens Vinculados</CardTitle>
           <Button onClick={abrirNovo}>
             <Plus className="h-4 w-4" />
             Novo Produto
@@ -329,7 +329,7 @@ export default function CatalogoProdutos() {
               <Package className="mx-auto mb-4 h-12 w-12 text-border" />
               <h4 className="mb-1 font-medium">Nenhum produto cadastrado</h4>
               <p className="text-sm text-muted-foreground">
-                Adicione o primeiro item ao catálogo vinculando-o ao ConPUB e GesCON.
+                Adicione o primeiro item ao catálogo vinculando-o ao PCA e Contratos
               </p>
             </div>
           ) : (

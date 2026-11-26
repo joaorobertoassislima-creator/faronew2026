@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarClock,
   Eye,
@@ -57,6 +58,7 @@ interface LinhaProduto extends ProdutoCatalogo {
 export default function CatalogoProdutos() {
   const { toast } = useToast();
   const { usuario } = useAuth();
+  const navegar = useNavigate();
 
   const [produtos, setProdutos] = useState<LinhaProduto[]>([]);
   const [unidades, setUnidades] = useState<UnidadeMedidaCatalogo[]>([]);
@@ -361,10 +363,15 @@ export default function CatalogoProdutos() {
                         <td className="px-4 py-3">
                           {linha.contratoNumero ? (
                             <>
-                              <span className="flex items-center gap-1 font-semibold text-primary">
+                              <button
+                                type="button"
+                                title="Ver contrato"
+                                onClick={() => navegar(`/contratos/${linha.contrato_id}`)}
+                                className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
                                 <FileSignature className="h-3.5 w-3.5" />
                                 {linha.contratoNumero}
-                              </span>
+                              </button>
                               <p className="mt-1 text-[11px] text-muted-foreground">
                                 {(linha.contratoFornecedor ?? "").slice(0, 30)}...
                               </p>

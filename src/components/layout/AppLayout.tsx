@@ -51,6 +51,12 @@ const ITENS_MENU: ItemMenu[] = [
     papeis: ["administrador", "almoxarife", "agente_compras", "auditor"],
   },
   {
+    titulo: "Entradas",
+    rota: "/entradas",
+    icone: Truck,
+    papeis: ["administrador", "almoxarife", "agente_compras", "auditor"],
+  },
+  {
     titulo: "Entradas e Saídas",
     rota: "/movimentacoes",
     icone: Package,

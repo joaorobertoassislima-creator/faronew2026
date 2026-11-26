@@ -1,8 +1,8 @@
 /**
  * Catálogo de Produtos (GesCON / ConPUB).
  *
- * Itens do catálogo vinculados às classes do PCA (ConPUB), aos contratos (GesCON)
- * e às unidades de medida.
+ * Itens do catálogo vinculados às classes do PCA (ConPUB), aos contratos (GesCON),
+ * às unidades de medida e aos itens de nível 4 do PCA (item código contrato).
  */
 
 import { supabase } from "./supabase";
@@ -15,6 +15,7 @@ export interface ProdutoCatalogo {
   categoria_id: string | null;
   unidade_id: string | null;
   contrato_id: string | null;
+  item_pca_id: string | null;
   saldo_licitado: number;
   controla_lote: boolean;
   ativo: boolean;
@@ -41,12 +42,22 @@ export interface UnidadeMedidaCatalogo {
   sigla: string | null;
 }
 
+/** Item de nível 4 do PCA (item código contrato) usado como vínculo do produto. */
+export interface ItemPCAContratoCatalogo {
+  id: string;
+  codigo: string;
+  descricao: string;
+  classe_id: string;
+  contrato_id: string | null;
+}
+
 export interface DadosProduto {
   nome: string;
   descricao: string | null;
   categoria_id: string | null;
   unidade_id: string | null;
   contrato_id: string | null;
+  item_pca_id: string | null;
   saldo_licitado: number;
   controla_lote: boolean;
 }
@@ -95,6 +106,16 @@ export async function listarUnidadesMedidaCatalogo(): Promise<UnidadeMedidaCatal
     .order("nome", { ascending: true });
   if (error) throw mensagemErro(error, "Erro ao carregar as unidades de medida.");
   return (data ?? []) as UnidadeMedidaCatalogo[];
+}
+
+/** Lista os itens de nível 4 do PCA (item código contrato) para o vínculo do produto. */
+export async function listarItensPCAContrato(): Promise<ItemPCAContratoCatalogo[]> {
+  const { data, error } = await supabase
+    .from("pca_itens_contrato")
+    .select("id, codigo, descricao, classe_id, contrato_id")
+    .order("codigo", { ascending: true });
+  if (error) throw mensagemErro(error, "Erro ao carregar os itens do PCA.");
+  return (data ?? []) as ItemPCAContratoCatalogo[];
 }
 
 /** Cria um novo produto no catálogo. */

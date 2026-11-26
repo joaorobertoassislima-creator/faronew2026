@@ -19,17 +19,22 @@ import ModalPesquisaCatalogo, {
   type ItemPesquisaCatalogo,
   type TipoPesquisaCatalogo,
 } from "@/components/catalogo/ModalPesquisaCatalogo";
+import ModalPesquisaItemPCA, {
+  type ItemPCAPesquisa,
+} from "@/components/pca/ModalPesquisaItemPCA";
 import {
   atualizarProduto,
   criarProduto,
   excluirProduto,
   listarCategoriasPCA,
   listarContratosCatalogo,
+  listarItensPCAContrato,
   listarProdutos,
   listarUnidadesMedidaCatalogo,
   type CategoriaPCA,
   type ContratoCatalogo,
   type DadosProduto,
+  type ItemPCAContratoCatalogo,
   type ProdutoCatalogo,
   type UnidadeMedidaCatalogo,
 } from "@/lib/catalogoProdutos";
@@ -45,6 +50,8 @@ interface LinhaProduto extends ProdutoCatalogo {
   unidadeNome: string | null;
   contratoNumero: string | null;
   contratoFornecedor: string | null;
+  itemPCACodigo: string | null;
+  itemPCADescricao: string | null;
 }
 
 export default function CatalogoProdutos() {
@@ -55,6 +62,7 @@ export default function CatalogoProdutos() {
   const [unidades, setUnidades] = useState<UnidadeMedidaCatalogo[]>([]);
   const [contratos, setContratos] = useState<ContratoCatalogo[]>([]);
   const [categorias, setCategorias] = useState<CategoriaPCA[]>([]);
+  const [itensPCA, setItensPCA] = useState<ItemPCAContratoCatalogo[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const [pagina, setPagina] = useState(1);
@@ -70,6 +78,8 @@ export default function CatalogoProdutos() {
   const [tipoPesquisa, setTipoPesquisa] = useState<TipoPesquisaCatalogo>("categoria");
   const [displayCategoria, setDisplayCategoria] = useState("");
   const [displayContrato, setDisplayContrato] = useState("");
+  const [displayItemPCA, setDisplayItemPCA] = useState("");
+  const [pesquisaItemPCAAberta, setPesquisaItemPCAAberta] = useState(false);
 
   const [form, setForm] = useState<DadosProduto>({
     nome: "",
@@ -77,6 +87,7 @@ export default function CatalogoProdutos() {
     categoria_id: null,
     unidade_id: null,
     contrato_id: null,
+    item_pca_id: null,
     saldo_licitado: 0,
     controla_lote: false,
   });
@@ -84,15 +95,18 @@ export default function CatalogoProdutos() {
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const [listaProdutos, listaUnidades, listaContratos, listaCategorias] = await Promise.all([
-        listarProdutos(),
-        listarUnidadesMedidaCatalogo(),
-        listarContratosCatalogo(),
-        listarCategoriasPCA(),
-      ]);
+      const [listaProdutos, listaUnidades, listaContratos, listaCategorias, listaItensPCA] =
+        await Promise.all([
+          listarProdutos(),
+          listarUnidadesMedidaCatalogo(),
+          listarContratosCatalogo(),
+          listarCategoriasPCA(),
+          listarItensPCAContrato(),
+        ]);
       setUnidades(listaUnidades);
       setContratos(listaContratos);
       setCategorias(listaCategorias);
+      setItensPCA(listaItensPCA);
       setProdutos(listaProdutos.map((produto) => ({ ...produto }) as LinhaProduto));
     } catch (erro) {
       toast(erro instanceof Error ? erro.message : "Erro ao carregar o catálogo.", "erro");
@@ -110,6 +124,7 @@ export default function CatalogoProdutos() {
       const unidade = unidades.find((u) => u.id === produto.unidade_id) ?? null;
       const contrato = contratos.find((c) => c.id === produto.contrato_id) ?? null;
       const categoria = categorias.find((c) => c.id === produto.categoria_id) ?? null;
+      const itemPCA = itensPCA.find((i) => i.id === produto.item_pca_id) ?? null;
       return {
         ...produto,
         categoriaCodigo: categoria?.codigo ?? null,
@@ -118,9 +133,11 @@ export default function CatalogoProdutos() {
         unidadeNome: unidade?.nome ?? null,
         contratoNumero: contrato?.numero ?? null,
         contratoFornecedor: contrato?.fornecedor ?? null,
+        itemPCACodigo: itemPCA?.codigo ?? null,
+        itemPCADescricao: itemPCA?.descricao ?? null,
       };
     });
-  }, [produtos, unidades, contratos, categorias]);
+  }, [produtos, unidades, contratos, categorias, itensPCA]);
 
   const filtradas = useMemo(() => {
     const nome = filtroNome.trim().toLowerCase();
@@ -156,11 +173,13 @@ export default function CatalogoProdutos() {
       categoria_id: null,
       unidade_id: null,
       contrato_id: null,
+      item_pca_id: null,
       saldo_licitado: 0,
       controla_lote: false,
     });
     setDisplayCategoria("");
     setDisplayContrato("");
+    setDisplayItemPCA("");
     setFormAberto(true);
   }
 
@@ -172,6 +191,7 @@ export default function CatalogoProdutos() {
       categoria_id: produto.categoria_id,
       unidade_id: produto.unidade_id,
       contrato_id: produto.contrato_id,
+      item_pca_id: produto.item_pca_id,
       saldo_licitado: Number(produto.saldo_licitado ?? 0),
       controla_lote: Boolean(produto.controla_lote),
     });
@@ -183,6 +203,11 @@ export default function CatalogoProdutos() {
     setDisplayContrato(
       produto.contratoNumero
         ? `Contrato ${produto.contratoNumero} - ${produto.contratoFornecedor ?? ""}`.trim()
+        : "",
+    );
+    setDisplayItemPCA(
+      produto.itemPCACodigo
+        ? `${produto.itemPCACodigo} - ${produto.itemPCADescricao ?? ""}`.trim()
         : "",
     );
     setFormAberto(true);
@@ -246,6 +271,12 @@ export default function CatalogoProdutos() {
       setForm((atual) => ({ ...atual, contrato_id: item.id }));
       setDisplayContrato(`${item.texto1} - ${item.texto2}`);
     }
+  }
+
+  function selecionarItemPCA(item: ItemPCAPesquisa) {
+    setForm((atual) => ({ ...atual, item_pca_id: item.id }));
+    setDisplayItemPCA(`${item.codigo} - ${item.descricao}`);
+    setPesquisaItemPCAAberta(false);
   }
 
   return (
@@ -314,6 +345,7 @@ export default function CatalogoProdutos() {
                       <th className="px-4 py-3">Produto</th>
                       <th className="px-4 py-3">Categoria (ConPUB)</th>
                       <th className="px-4 py-3">Contrato (GesCON)</th>
+                      <th className="px-4 py-3">Item PCA (Nível 4)</th>
                       <th className="px-4 py-3">Saldo Original</th>
                       <th className="px-4 py-3">Controle de Lote</th>
                       <th className="px-4 py-3 text-right">Ações</th>
@@ -358,6 +390,20 @@ export default function CatalogoProdutos() {
                             </>
                           ) : (
                             <span className="text-xs text-muted-foreground">Compra Direta</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {linha.itemPCACodigo ? (
+                            <>
+                              <span className="inline-block rounded bg-emerald-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-800">
+                                {linha.itemPCACodigo}
+                              </span>
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {(linha.itemPCADescricao ?? "").slice(0, 30)}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Não vinculado</span>
                           )}
                         </td>
                         <td className="px-4 py-3 font-semibold">
@@ -517,6 +563,27 @@ export default function CatalogoProdutos() {
                 </div>
               </div>
 
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-sm font-medium">
+                  Item do PCA (Nível 4 - Código Contrato)
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={displayItemPCA}
+                    onClick={() => setPesquisaItemPCAAberta(true)}
+                    placeholder="Clique na lupa para pesquisar o item do PCA..."
+                    className="cursor-pointer bg-muted/40"
+                  />
+                  <Button type="button" onClick={() => setPesquisaItemPCAAberta(true)}>
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ex.: 2.16.05.001 - Locação Poupatempo
+                </p>
+              </div>
+
               <div>
                 <label className="mb-1 block text-sm font-medium">Saldo Homologado (ARP)</label>
                 <Input
@@ -623,6 +690,14 @@ export default function CatalogoProdutos() {
                   </td>
                 </tr>
                 <tr className="border-b border-border">
+                  <th className="px-2 py-2 text-left font-medium">Item PCA (Nível 4):</th>
+                  <td className="px-2 py-2">
+                    {visualizando.itemPCACodigo
+                      ? `${visualizando.itemPCACodigo} - ${visualizando.itemPCADescricao ?? ""}`
+                      : "Não vinculado"}
+                  </td>
+                </tr>
+                <tr className="border-b border-border">
                   <th className="px-2 py-2 text-left font-medium">Saldo Licitado:</th>
                   <td className="px-2 py-2">{formatarMoeda(Number(visualizando.saldo_licitado ?? 0))}</td>
                 </tr>
@@ -655,6 +730,14 @@ export default function CatalogoProdutos() {
         aberto={pesquisaAberta}
         aoFechar={() => setPesquisaAberta(false)}
         aoSelecionar={selecionarPesquisa}
+      />
+
+      <ModalPesquisaItemPCA
+        aberto={pesquisaItemPCAAberta}
+        aoFechar={() => setPesquisaItemPCAAberta(false)}
+        aoSelecionar={selecionarItemPCA}
+        titulo="Pesquisa de itens do PCA (nível 4)"
+        descricao="Selecione o item do PCA (código contrato) que será vinculado ao produto do catálogo."
       />
 
       {filtroNome || filtroCategoria || filtroContrato ? (

@@ -13,6 +13,9 @@ import {
   Search,
   Trash2,
   Upload,
+  X,
+  Boxes,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -167,6 +170,8 @@ export default function PCAItens() {
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [expandidos, setExpandidos] = useState<Record<string, boolean>>({});
+  /** Classe/grupo cujos itens código contrato estão sendo exibidos no modal. */
+  const [classeEmFoco, setClasseEmFoco] = useState<string | null>(null);
 
   const [dialogo, setDialogo] = useState<
     | { tipo: "geral"; dados: FormularioGeral }
@@ -1037,14 +1042,14 @@ export default function PCAItens() {
                                       classesDoEspecifico.map((classe) => (
                                         <div
                                           key={classe.id}
-                                          className="rounded-md border border-border bg-card"
+                                          className="rounded-md border border-emerald-200 border-l-4 border-l-emerald-600 bg-gradient-to-r from-emerald-50 to-white"
                                         >
                                           <div className="flex items-start gap-3 p-3">
                                             <div className="min-w-0 flex-1">
-                                            <p className="font-mono text-sm font-semibold text-primary">
+                                            <p className="font-mono text-sm font-semibold text-emerald-800">
                                               {classe.codigo}
                                             </p>
-                                            <p className="text-sm">
+                                            <p className="text-sm text-emerald-900">
                                               {classe.descricao}
                                             </p>
                                             <p className="text-xs text-muted-foreground">

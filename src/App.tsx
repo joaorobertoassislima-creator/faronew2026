@@ -13,6 +13,7 @@ import PCAItens from "@/pages/PCAItens";
 import PCAImportar from "@/pages/PCAImportar";
 import Perfil from "@/pages/Perfil";
 import Notificacoes from "@/pages/Notificacoes";
+import CadastrosBasicos from "@/pages/CadastrosBasicos";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
@@ -135,6 +136,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <PCAImportar />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/cadastros-basicos"
+        element={
+          <RotaProtegida>
+            <CadastrosBasicos />
           </RotaProtegida>
         }
       />

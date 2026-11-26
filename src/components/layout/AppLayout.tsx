@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   Bell,
   Boxes,
+  Database,
   ChevronDown,
   ClipboardList,
   FileSignature,
@@ -88,6 +89,12 @@ const ITENS_MENU: ItemMenu[] = [
     icone: Gavel,
     papeis: ["administrador", "agente_compras", "auditor"],
     disponivel: false,
+  },
+  {
+    titulo: "Cadastros Básicos",
+    rota: "/cadastros-basicos",
+    icone: Database,
+    papeis: ["administrador"],
   },
   {
     titulo: "Usuários e Perfis",

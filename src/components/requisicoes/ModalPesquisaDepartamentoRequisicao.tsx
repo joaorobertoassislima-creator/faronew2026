@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   buscarDepartamentos,
   type DepartamentoPesquisavel,
@@ -62,9 +63,9 @@ export default function ModalPesquisaDepartamentoRequisicao({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4"
       onClick={onClose}
     >
       <div
@@ -200,6 +201,7 @@ export default function ModalPesquisaDepartamentoRequisicao({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

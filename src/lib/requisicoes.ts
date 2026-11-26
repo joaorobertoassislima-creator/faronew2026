@@ -305,6 +305,9 @@ export async function atualizarItemRequisicao({
   if (error) throw new Error(error.message);
 }
 
+/** Alias usado pela pagina de requisicoes ao registrar o atendimento de um item. */
+export const atualizarItemAtendido = atualizarItemRequisicao;
+
 export async function removerItemRequisicao(itemId: string): Promise<void> {
   const { error } = await supabase.from("requisicoes_itens").delete().eq("id", itemId);
   if (error) throw new Error(error.message);

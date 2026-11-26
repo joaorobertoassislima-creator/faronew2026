@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   Package,
+  PackageOpen,
   ScrollText,
   Truck,
   User,
@@ -42,6 +43,12 @@ const ITENS_MENU: ItemMenu[] = [
     rota: "/requisicoes",
     icone: ClipboardList,
     papeis: ["administrador", "servidor", "gestor_aprovador", "almoxarife", "auditor"],
+  },
+  {
+    titulo: "Painel do Almoxarifado",
+    rota: "/almoxarife",
+    icone: PackageOpen,
+    papeis: ["administrador", "almoxarife", "auditor"],
   },
   {
     titulo: "Estoque",

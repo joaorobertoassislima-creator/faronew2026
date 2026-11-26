@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 interface DialogProps {
   aberto: boolean;
-  titulo: string;
+  titulo: ReactNode;
   descricao?: string;
   aoFechar: () => void;
   children: ReactNode;
@@ -51,7 +51,7 @@ export default function Dialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={titulo}
+        aria-label={typeof titulo === "string" ? titulo : undefined}
         className={`relative z-10 flex max-h-[92vh] w-full ${largura} flex-col rounded-t-xl border border-border bg-card shadow-xl sm:rounded-xl`}
       >
         <div className="flex items-start justify-between gap-4 border-b border-border p-4 sm:p-5">

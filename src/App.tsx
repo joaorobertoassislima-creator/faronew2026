@@ -18,6 +18,7 @@ import CatalogoProdutos from "@/pages/CatalogoProdutos";
 import Estoque from "@/pages/Estoque";
 import Entradas from "@/pages/Entradas";
 import Requisicoes from "@/pages/Requiacoes";
+import Almoxarife from "@/pages/Almoxarife";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
@@ -180,6 +181,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <Requisicoes />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/almoxarife"
+        element={
+          <RotaProtegida>
+            <Almoxarife />
           </RotaProtegida>
         }
       />

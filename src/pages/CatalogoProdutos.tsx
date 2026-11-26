@@ -526,7 +526,7 @@ export default function CatalogoProdutos() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">Vincular Licitação/ARP (GesCON)</label>
+                <label className="mb-1 block text-sm font-medium">Vincular Contrato</label>
                 <div className="flex gap-2">
                   <Input
                     readOnly

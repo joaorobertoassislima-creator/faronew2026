@@ -23,9 +23,11 @@ import {
   atualizarProduto,
   criarProduto,
   excluirProduto,
+  listarCategoriasPCA,
   listarContratosCatalogo,
   listarProdutos,
   listarUnidadesMedidaCatalogo,
+  type CategoriaPCA,
   type ContratoCatalogo,
   type DadosProduto,
   type ProdutoCatalogo,
@@ -52,6 +54,7 @@ export default function CatalogoProdutos() {
   const [produtos, setProdutos] = useState<LinhaProduto[]>([]);
   const [unidades, setUnidades] = useState<UnidadeMedidaCatalogo[]>([]);
   const [contratos, setContratos] = useState<ContratoCatalogo[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaPCA[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const [pagina, setPagina] = useState(1);
@@ -81,22 +84,16 @@ export default function CatalogoProdutos() {
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const [listaProdutos, listaUnidades, listaContratos] = await Promise.all([
+      const [listaProdutos, listaUnidades, listaContratos, listaCategorias] = await Promise.all([
         listarProdutos(),
         listarUnidadesMedidaCatalogo(),
         listarContratosCatalogo(),
+        listarCategoriasPCA(),
       ]);
       setUnidades(listaUnidades);
       setContratos(listaContratos);
-      setProdutos(
-        listaProdutos.map((produto) => {
-          const categoria = listaUnidades.length
-            ? undefined
-            : undefined;
-          void categoria;
-          return { ...produto } as LinhaProduto;
-        }),
-      );
+      setCategorias(listaCategorias);
+      setProdutos(listaProdutos.map((produto) => ({ ...produto }) as LinhaProduto));
     } catch (erro) {
       toast(erro instanceof Error ? erro.message : "Erro ao carregar o catálogo.", "erro");
     } finally {
@@ -112,17 +109,18 @@ export default function CatalogoProdutos() {
     return produtos.map((produto) => {
       const unidade = unidades.find((u) => u.id === produto.unidade_id) ?? null;
       const contrato = contratos.find((c) => c.id === produto.contrato_id) ?? null;
+      const categoria = categorias.find((c) => c.id === produto.categoria_id) ?? null;
       return {
         ...produto,
-        categoriaCodigo: null,
-        categoriaDescricao: null,
+        categoriaCodigo: categoria?.codigo ?? null,
+        categoriaDescricao: categoria?.descricao ?? null,
         unidadeSigla: unidade?.sigla ?? null,
         unidadeNome: unidade?.nome ?? null,
         contratoNumero: contrato?.numero ?? null,
         contratoFornecedor: contrato?.fornecedor ?? null,
       };
     });
-  }, [produtos, unidades, contratos]);
+  }, [produtos, unidades, contratos, categorias]);
 
   const filtradas = useMemo(() => {
     const nome = filtroNome.trim().toLowerCase();
@@ -267,6 +265,35 @@ export default function CatalogoProdutos() {
             Novo Produto
           </Button>
         </CardHeader>
+        <div className="grid gap-3 border-b border-border bg-muted/10 px-4 py-3 md:grid-cols-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filtroNome}
+              onChange={(e) => setFiltroNome(e.target.value)}
+              placeholder="Buscar produto pelo nome..."
+              className="pl-9"
+            />
+          </div>
+          <div className="relative">
+            <Tags className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value)}
+              placeholder="Filtrar por categoria (ConPUB)..."
+              className="pl-9"
+            />
+          </div>
+          <div className="relative">
+            <FileSignature className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filtroContrato}
+              onChange={(e) => setFiltroContrato(e.target.value)}
+              placeholder="Filtrar por contrato (GesCON)..."
+              className="pl-9"
+            />
+          </div>
+        </div>
         <CardContent className="p-0">
           {carregando ? (
             <p className="p-6 text-center text-sm text-muted-foreground">Carregando catálogo...</p>
@@ -288,7 +315,7 @@ export default function CatalogoProdutos() {
                       <th className="px-4 py-3">Categoria (ConPUB)</th>
                       <th className="px-4 py-3">Contrato (GesCON)</th>
                       <th className="px-4 py-3">Saldo Original</th>
-                      <th className="px-4 py-3">Cont</th>
+                      <th className="px-4 py-3">Controle de Lote</th>
                       <th className="px-4 py-3 text-right">Ações</th>
                     </tr>
                   </thead>

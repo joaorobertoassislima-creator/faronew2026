@@ -513,7 +513,8 @@ function TabelaDominio({
 
 interface PropsVinculoUsuarios {
   usuarios: UsuarioVinculado[];
-  aoAtualizar: (usuarioId: string, departamentoId: string | null) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  aoAtualizar: (usuarioId: string, departamentoId: string | null) => Promise<any>;
 }
 
 function VinculoUsuarios({ usuarios, aoAtualizar }: PropsVinculoUsuarios) {

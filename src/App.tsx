@@ -14,6 +14,7 @@ import PCAImportar from "@/pages/PCAImportar";
 import Perfil from "@/pages/Perfil";
 import Notificacoes from "@/pages/Notificacoes";
 import CadastrosBasicos from "@/pages/CadastrosBasicos";
+import CatalogoProdutos from "@/pages/CatalogoProdutos";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
@@ -144,6 +145,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <CadastrosBasicos />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/catalogo-produtos"
+        element={
+          <RotaProtegida>
+            <CatalogoProdutos />
           </RotaProtegida>
         }
       />

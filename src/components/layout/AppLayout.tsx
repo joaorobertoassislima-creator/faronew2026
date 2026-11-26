@@ -77,6 +77,12 @@ const ITENS_MENU: ItemMenu[] = [
     papeis: ["administrador", "agente_compras", "auditor"],
   },
   {
+    titulo: "Catálogo de Produtos",
+    rota: "/catalogo-produtos",
+    icone: FileSignature,
+    papeis: ["administrador", "agente_compras", "auditor"],
+  },
+  {
     titulo: "Atas de Registro de Preço",
     rota: "/atas",
     icone: FileText,

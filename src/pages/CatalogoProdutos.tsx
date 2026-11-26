@@ -637,14 +637,6 @@ export default function CatalogoProdutos() {
                   </td>
                 </tr>
                 <tr className="border-b border-border">
-                  <th className="px-2 py-2 text-left font-medium">Categoria (PCA):</th>
-                  <td className="px-2 py-2">
-                    {visualizando.categoriaCodigo
-                      ? `${visualizando.categoriaCodigo} - ${visualizando.categoriaDescricao ?? ""}`
-                      : "Não vinculado"}
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
                   <th className="px-2 py-2 text-left font-medium">Contrato:</th>
                   <td className="px-2 py-2">
                     {visualizando.contratoNumero

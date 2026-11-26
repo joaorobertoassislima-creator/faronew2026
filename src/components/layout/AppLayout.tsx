@@ -118,7 +118,6 @@ const ITENS_MENU: ItemMenu[] = [
     rota: "/usuarios",
     icone: Users,
     papeis: ["administrador"],
-    disponivel: false,
   },
   {
     titulo: "Auditoria",

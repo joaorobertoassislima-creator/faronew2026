@@ -19,6 +19,7 @@ import Estoque from "@/pages/Estoque";
 import Entradas from "@/pages/Entradas";
 import Requisicoes from "@/pages/Requiacoes";
 import Almoxarife from "@/pages/Almoxarife";
+import Usuarios from "@/pages/Usuarios";
 import { NotificacoesProvider } from "@/lib/notificacoesContexto";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/toast";
@@ -189,6 +190,14 @@ export default function App() {
         element={
           <RotaProtegida>
             <Almoxarife />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/usuarios"
+        element={
+          <RotaProtegida>
+            <Usuarios />
           </RotaProtegida>
         }
       />

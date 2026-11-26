@@ -645,7 +645,7 @@ export default function CatalogoProdutos() {
                   </td>
                 </tr>
                 <tr className="border-b border-border">
-                  <th className="px-2 py-2 text-left font-medium">Contrato (ARP):</th>
+                  <th className="px-2 py-2 text-left font-medium">Contrato:</th>
                   <td className="px-2 py-2">
                     {visualizando.contratoNumero
                       ? `${visualizando.contratoNumero} - ${visualizando.contratoFornecedor ?? ""}`
@@ -653,7 +653,7 @@ export default function CatalogoProdutos() {
                   </td>
                 </tr>
                 <tr className="border-b border-border">
-                  <th className="px-2 py-2 text-left font-medium">Item PCA (Nível 4):</th>
+                  <th className="px-2 py-2 text-left font-medium">Item PCA:</th>
                   <td className="px-2 py-2">
                     {visualizando.itemPCACodigo
                       ? `${visualizando.itemPCACodigo} - ${visualizando.itemPCADescricao ?? ""}`

@@ -543,7 +543,7 @@ export default function CatalogoProdutos() {
 
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-sm font-medium">
-                  Item do PCA (Nível 4 - Código Contrato)
+                  Item do PCA
                 </label>
                 <div className="flex gap-2">
                   <Input

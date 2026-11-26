@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import { PAPEIS, type Papel } from "@/lib/auth";
 import {
   ROTULOS_PAPEIS,
@@ -54,13 +55,12 @@ export default function ModalUsuario({
   departamentos,
 }: Props) {
   const editando = usuario !== null;
+  const { toast } = useToast();
   const [formulario, setFormulario] = useState<FormularioUsuario>(FORMULARIO_VAZIO);
-  const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     if (!aberto) return;
-    setErro(null);
     setEnviando(false);
     setFormulario(
       usuario
@@ -95,35 +95,35 @@ export default function ModalUsuario({
 
   async function confirmar() {
     if (!formulario.nome.trim()) {
-      setErro("Informe o nome do usuário.");
+      toast("Informe o nome do usuário.", "erro");
       return;
     }
     if (!editando) {
       if (!formulario.email.trim().includes("@")) {
-        setErro("Informe um e-mail válido.");
+        toast("Informe um e-mail válido.", "erro");
         return;
       }
       if (formulario.senha.length < 8) {
-        setErro("A senha deve ter no mínimo 8 caracteres.");
+        toast("A senha deve ter no mínimo 8 caracteres.", "erro");
         return;
       }
     }
     if (formulario.papeis.length === 0) {
-      setErro("Selecione ao menos um papel de acesso.");
+      toast("Selecione ao menos um papel de acesso.", "erro");
       return;
     }
 
     setEnviando(true);
-    setErro(null);
     try {
       const problema = await aoSalvar(formulario);
       if (problema) {
-        setErro(problema);
+        toast(problema, "erro");
         setEnviando(false);
       }
     } catch (problema) {
-      setErro(
+      toast(
         problema instanceof Error ? problema.message : "Não foi possível salvar o usuário.",
+        "erro",
       );
       setEnviando(false);
     }
@@ -293,12 +293,6 @@ export default function ModalUsuario({
               <option value="inativo">Inativo</option>
             </Select>
           </div>
-        )}
-
-        {erro && (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {erro}
-          </p>
         )}
       </div>
     </Dialog>

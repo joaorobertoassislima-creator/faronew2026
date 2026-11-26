@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, KeyRound, Loader2, Lock, Package } from "lucide-react";
+import { KeyRound, Loader2, Lock, Package } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,20 +15,18 @@ export default function RedefinirSenha() {
 
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setErro(null);
 
     if (novaSenha.length < 6) {
-      setErro("A senha deve ter no mínimo 6 caracteres.");
+      toast("A senha deve ter no mínimo 6 caracteres.", "erro");
       return;
     }
     if (novaSenha !== confirmacao) {
-      setErro("As senhas informadas não conferem.");
+      toast("As senhas informadas não conferem.", "erro");
       return;
     }
 
@@ -37,7 +35,7 @@ export default function RedefinirSenha() {
     setEnviando(false);
 
     if (mensagem) {
-      setErro(mensagem);
+      toast(mensagem, "erro");
       return;
     }
     setSucesso(true);
@@ -99,13 +97,6 @@ export default function RedefinirSenha() {
                   />
                 </div>
               </div>
-
-              {erro && (
-                <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{erro}</span>
-                </div>
-              )}
 
               <Button type="submit" className="w-full" disabled={enviando || sucesso}>
                 {enviando && <Loader2 className="h-4 w-4 animate-spin" />}

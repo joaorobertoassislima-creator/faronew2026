@@ -5,7 +5,6 @@ import {
   FileSignature,
   FileText,
   Gavel,
-  Info,
   ScrollText,
   Truck,
   Users,
@@ -14,6 +13,7 @@ import { Link } from "react-router-dom";
 import { useAuth, type Papel } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatarData } from "@/lib/format";
+import { useAvisoToast } from "@/lib/avisos";
 import ModalNotificacoes from "@/components/notificacoes/ModalNotificacoes";
 
 interface Atalho {
@@ -89,6 +89,8 @@ export default function Home() {
   const { perfil, papeis, erroPerfil } = useAuth();
   const hoje = formatarData(new Date());
 
+  useAvisoToast(erroPerfil, "erro");
+
   const atalhos = ATALHOS.filter((atalho) =>
     atalho.papeis.some((papel) => papeis.includes(papel)),
   );
@@ -128,13 +130,6 @@ export default function Home() {
           </div>
         </dl>
       </header>
-
-      {erroPerfil && (
-        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-          <span>{erroPerfil}</span>
-        </div>
-      )}
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Módulos do sistema</h2>

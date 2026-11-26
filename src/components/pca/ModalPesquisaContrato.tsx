@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Dialog from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 import {
   rotuloStatus,
   varianteStatus,
@@ -72,9 +73,9 @@ export default function ModalPesquisaContrato({
   titulo = "Pesquisa avançada de contratos",
   descricao = "Use os ícones de funil nos cabeçalhos para filtrar colunas. Selecione um contrato pelo botão Selecionar ou com duplo clique na linha.",
 }: Props) {
+  const { toast } = useToast();
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [baloesAbertos, setBaloesAbertos] = useState<string | null>(null);
@@ -82,14 +83,13 @@ export default function ModalPesquisaContrato({
 
   async function carregar() {
     setCarregando(true);
-    setErro(null);
     const { data, error } = await supabase
       .from("contratos")
       .select("*")
       .order("numero", { ascending: true })
       .limit(500);
     if (error) {
-      setErro(traduzirErroSupabase(error.message));
+      toast(traduzirErroSupabase(error.message), "erro");
       setContratos([]);
     } else {
       setContratos((data as Contrato[]) ?? []);
@@ -238,12 +238,6 @@ export default function ModalPesquisaContrato({
             />
           </div>
         </div>
-
-        {erro && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
-            {erro}
-          </div>
-        )}
 
         {carregando ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">

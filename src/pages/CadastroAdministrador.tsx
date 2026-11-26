@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
+import { useAvisoToast } from "@/lib/avisos";
 
 export default function CadastroAdministrador() {
   const { toast } = useToast();
@@ -35,6 +36,8 @@ export default function CadastroAdministrador() {
   const [codigo, setCodigo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  useAvisoToast(erro, "erro");
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -313,13 +316,6 @@ export default function CadastroAdministrador() {
                     primeiro administrador.
                   </p>
                 </div>
-
-                {erro && (
-                  <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>{erro}</span>
-                  </div>
-                )}
 
                 <Button type="submit" className="w-full" disabled={enviando}>
                   {enviando && <Loader2 className="h-4 w-4 animate-spin" />}

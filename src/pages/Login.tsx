@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Loader2, Lock, Mail, Package, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Mail, Package, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,15 +16,13 @@ export default function Login() {
   const [modo, setModo] = useState<"login" | "recuperacao">("login");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setErro(null);
 
     if (!email.trim()) {
-      setErro("Informe o e-mail institucional.");
+      toast("Informe o e-mail institucional.", "erro");
       return;
     }
 
@@ -32,20 +30,20 @@ export default function Login() {
     try {
       if (modo === "login") {
         if (!senha) {
-          setErro("Informe a sua senha.");
+          toast("Informe a sua senha.", "erro");
           setEnviando(false);
           return;
         }
         const mensagem = await entrar(email, senha);
         if (mensagem) {
-          setErro(mensagem);
+          toast(mensagem, "erro");
         } else {
           navegar("/", { replace: true });
         }
       } else {
         const mensagem = await recuperarSenha(email);
         if (mensagem) {
-          setErro(mensagem);
+          toast(mensagem, "erro");
         } else {
           toast(
             "Se o e-mail estiver cadastrado, você receberá as instruções para redefinir a senha.",
@@ -157,7 +155,6 @@ export default function Login() {
                         className="text-xs font-medium text-primary hover:underline"
                         onClick={() => {
                           setModo("recuperacao");
-                          setErro(null);
                         }}
                       >
                         Esqueci minha senha
@@ -179,13 +176,6 @@ export default function Login() {
                   </div>
                 )}
 
-                {erro && (
-                  <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>{erro}</span>
-                  </div>
-                )}
-
                 <Button type="submit" className="w-full" disabled={enviando}>
                   {enviando && <Loader2 className="h-4 w-4 animate-spin" />}
                   {modo === "login" ? "Entrar" : "Enviar instruções"}
@@ -198,7 +188,6 @@ export default function Login() {
                     className="w-full gap-2"
                     onClick={() => {
                       setModo("login");
-                      setErro(null);
                     }}
                   >
                     <ArrowLeft className="h-4 w-4" />

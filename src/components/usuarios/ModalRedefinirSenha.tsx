@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import Dialog from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 
 interface Props {
   aberto: boolean;
@@ -15,37 +16,36 @@ export default function ModalRedefinirSenha({
   aoConfirmar,
   nomeUsuario,
 }: Props) {
+  const { toast } = useToast();
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     if (aberto) {
       setSenha("");
       setConfirmacao("");
-      setErro(null);
       setSalvando(false);
     }
   }, [aberto]);
 
   async function confirmar() {
     if (senha.length < 8) {
-      setErro("A senha deve ter no mínimo 8 caracteres.");
+      toast("A senha deve ter no mínimo 8 caracteres.", "erro");
       return;
     }
     if (senha !== confirmacao) {
-      setErro("As senhas informadas não conferem.");
+      toast("As senhas informadas não conferem.", "erro");
       return;
     }
 
     setSalvando(true);
-    setErro(null);
     try {
       await aoConfirmar(senha);
     } catch (problema) {
-      setErro(
+      toast(
         problema instanceof Error ? problema.message : "Não foi possível redefinir a senha.",
+        "erro",
       );
       setSalvando(false);
     }
@@ -108,12 +108,6 @@ export default function ModalRedefinirSenha({
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
-
-        {erro && (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {erro}
-          </p>
-        )}
       </div>
     </Dialog>
   );

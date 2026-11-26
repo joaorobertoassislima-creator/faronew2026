@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Dialog from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 /** Resumo de contrato usado apenas para exibir o número no vínculo atual. */
 export interface ContratoResumo {
   id: string;
@@ -79,10 +80,10 @@ export default function ModalPesquisaItemPCA({
   titulo = "Pesquisa de itens do PCA",
   descricao = "Use os ícones de funil nos cabeçalhos para filtrar colunas. Selecione um item pelo botão Selecionar ou com duplo clique na linha.",
 }: Props) {
+  const { toast } = useToast();
   const [itens, setItens] = useState<ItemPCAPesquisa[]>([]);
   const [contratos, setContratos] = useState<Record<string, ContratoResumo>>({});
   const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [baloesAbertos, setBaloesAbertos] = useState<string | null>(null);
@@ -90,7 +91,6 @@ export default function ModalPesquisaItemPCA({
 
   async function carregar() {
     setCarregando(true);
-    setErro(null);
 
     const [itensRes, contratosRes] = await Promise.all([
       supabase
@@ -102,7 +102,7 @@ export default function ModalPesquisaItemPCA({
     ]);
 
     if (itensRes.error) {
-      setErro(traduzirErroSupabase(itensRes.error.message));
+      toast(traduzirErroSupabase(itensRes.error.message), "erro");
       setItens([]);
     } else {
       setItens((itensRes.data as unknown as ItemPCAPesquisa[]) ?? []);
@@ -257,12 +257,6 @@ export default function ModalPesquisaItemPCA({
             />
           </div>
         </div>
-
-        {erro && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm">
-            {erro}
-          </div>
-        )}
 
         {carregando ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Dialog from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 
 /** Produto do catálogo exibido na tabela da modal. */
 export interface ProdutoPesquisa {
@@ -57,16 +58,15 @@ export default function ModalPesquisaProduto({
   titulo = "Pesquisa de produtos do catálogo",
   descricao = "Selecione o produto que será vinculado ao item do PCA. O vínculo pode ser feito também pela página Catálogo de Produtos.",
 }: Props) {
+  const { toast } = useToast();
   const [produtos, setProdutos] = useState<ProdutoPesquisa[]>([]);
   const [contratos, setContratos] = useState<Record<string, string>>({});
   const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(0);
 
   async function carregar() {
     setCarregando(true);
-    setErro(null);
 
     const [produtosRes, contratosRes] = await Promise.all([
       supabase
@@ -78,7 +78,7 @@ export default function ModalPesquisaProduto({
     ]);
 
     if (produtosRes.error) {
-      setErro(traduzirErroSupabase(produtosRes.error.message));
+      toast(traduzirErroSupabase(produtosRes.error.message), "erro");
       setProdutos([]);
     } else {
       setProdutos((produtosRes.data as ProdutoPesquisa[]) ?? []);
@@ -174,8 +174,6 @@ export default function ModalPesquisaProduto({
             placeholder="Buscar produto pelo nome, descrição ou contrato..."
           />
         </div>
-
-        {erro && <p className="text-sm text-destructive">{erro}</p>}
 
         {carregando ? (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">

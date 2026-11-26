@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
+import { useAvisoToast } from "@/lib/avisos";
 
 const BUCKET_AVATARES = "avatares";
 const TAMANHO_MAXIMO = 2 * 1024 * 1024;
@@ -44,6 +45,8 @@ export default function Perfil() {
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [enviandoFoto, setEnviandoFoto] = useState(false);
+
+  useAvisoToast(erro, "erro");
 
   useEffect(() => {
     if (!perfil) return;
@@ -262,12 +265,6 @@ export default function Perfil() {
                 onChange={(evento) => setSetor(evento.target.value)}
               />
             </div>
-
-            {erro && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                {erro}
-              </div>
-            )}
 
             <Button type="submit" disabled={salvando} className="gap-2">
               {salvando && <Loader2 className="h-4 w-4 animate-spin" />}

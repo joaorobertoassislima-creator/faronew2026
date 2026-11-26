@@ -243,7 +243,6 @@ export async function estornarEntrada(id: string): Promise<void> {
   if (!data || (data as { ok?: boolean }).ok !== true) {
     throw new Error("Não foi possível excluir a entrada. Tente novamente.");
   }
-  if (error) throw new Error(error.message);
 
   // Confere que o registro realmente saiu do histórico.
   const { data: restante, error: erroConsulta } = await supabase

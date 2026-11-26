@@ -38,11 +38,10 @@ interface ItemMenu {
 const ITENS_MENU: ItemMenu[] = [
   { titulo: "Início", rota: "/", icone: HomeIcon },
   {
-    titulo: "Requisições de Compra",
+    titulo: "Requisições",
     rota: "/requisicoes",
     icone: ClipboardList,
-    papeis: ["administrador", "servidor", "gestor_aprovador", "agente_compras", "auditor"],
-    disponivel: false,
+    papeis: ["administrador", "servidor", "gestor_aprovador", "almoxarife", "auditor"],
   },
   {
     titulo: "Estoque",

@@ -1,26 +1,17 @@
 import { supabase } from "@/lib/supabase";
 
-export type StatusRequisicao = "pendente" | "aprovada" | "atendida" | "cancelada";
-
-export const STATUS_REQUISICAO: { valor: StatusRequisicao; rotulo: string }[] = [
-  { valor: "pendente", rotulo: "Pendente (Chefia)" },
-  { valor: "aprovada", rotulo: "Aprovada (Almoxarifado)" },
-  { valor: "atendida", rotulo: "Atendida" },
-  { valor: "cancelada", rotulo: "Cancelada" },
-];
-
 export interface Requisicao {
   id: string;
-  usuario_id: string | null;
   numero: string;
   solicitante: string | null;
+  usuario_id: string | null;
   departamento_id: string | null;
+  departamento_nome: string | null;
   data_solicitacao: string;
-  status: StatusRequisicao;
+  status: string;
   observacoes: string | null;
   aprovado_por: string | null;
   data_aprovacao: string | null;
-  departamento_nome?: string | null;
 }
 
 export interface ItemRequisicao {
@@ -32,20 +23,12 @@ export interface ItemRequisicao {
   unidade: string | null;
   quantidade_atendida: number | null;
   justificativa_corte: string | null;
-  estoque_atual?: number | null;
-}
-
-export interface Pagina<T> {
-  dados: T[];
-  total: number;
-  pagina: number;
-  paginas: number;
 }
 
 export interface ProdutoPesquisavel {
   id: string;
   nome: string;
-  unidade: string;
+  unidade: string | null;
   estoque_atual: number;
 }
 
@@ -55,143 +38,215 @@ export interface DepartamentoPesquisavel {
   sigla: string | null;
 }
 
-interface LinhaRequisicao {
-  id: string;
-  usuario_id: string | null;
-  numero: string;
-  solicitante: string | null;
-  departamento_id: string | null;
-  data_solicitacao: string;
-  status: StatusRequisicao;
-  observacoes: string | null;
-  aprovado_por: string | null;
-  data_aprovacao: string | null;
-  departamentos?: { nome: string }[] | null;
+export type Produto = ProdutoPesquisavel;
+export type Departamento = DepartamentoPesquisavel;
+
+export const STATUS_REQUISICAO = [
+  { valor: "pendente", rotulo: "Pendente" },
+  { valor: "aprovada", rotulo: "Aprovada" },
+  { valor: "atendida", rotulo: "Atendida" },
+  { valor: "rejeitada", rotulo: "Rejeitada" },
+  { valor: "cancelada", rotulo: "Cancelada" },
+];
+
+export function rotuloStatus(status: string): string {
+  return STATUS_REQUISICAO.find((item) => item.valor === status)?.rotulo ?? status;
 }
 
-interface LinhaItem {
-  id: string;
-  requisicao_id: string;
-  produto_id: string | null;
-  descricao: string | null;
-  quantidade: number | null;
-  unidade: string | null;
-  quantidade_atendida: number | null;
-  justificativa_corte: string | null;
-  produtos?: { estoque_atual: number | null }[] | null;
+export interface PaginaResultado<T> {
+  dados: T[];
+  total: number;
+  paginas: number;
 }
 
-/** Converte a linha do banco em um objeto de tela. */
-function mapearRequisicao(linha: LinhaRequisicao): Requisicao {
-  return {
-    id: linha.id,
-    usuario_id: linha.usuario_id,
-    numero: linha.numero,
-    solicitante: linha.solicitante,
-    departamento_id: linha.departamento_id,
-    data_solicitacao: linha.data_solicitacao,
-    status: linha.status,
-    observacoes: linha.observacoes,
-    aprovado_por: linha.aprovado_por,
-    data_aprovacao: linha.data_aprovacao,
-    departamento_nome: linha.departamentos?.[0]?.nome ?? null,
-  };
-}
-
-function mapearItem(linha: LinhaItem): ItemRequisicao {
-  return {
-    id: linha.id,
-    requisicao_id: linha.requisicao_id,
-    produto_id: linha.produto_id,
-    descricao: linha.descricao,
-    quantidade: Number(linha.quantidade ?? 0),
-    unidade: linha.unidade,
-    quantidade_atendida: linha.quantidade_atendida,
-    justificativa_corte: linha.justificativa_corte,
-    estoque_atual: linha.produtos?.[0]?.estoque_atual ?? null,
-  };
-}
-
-/**
- * Lista as requisicoes com paginacao e filtros.
- * `somenteMinhas` restringe ao usuario logado (aba "Minhas Requisicoes").
- */
-export async function listarRequisicoes(params: {
-  somenteMinhas?: boolean;
+interface ListarRequisicoesParams {
   usuarioId?: string | null;
   status?: string;
   numero?: string;
   solicitante?: string;
   pagina?: number;
   porPagina?: number;
-}): Promise<Pagina<Requisicao>> {
-  const pagina = params.pagina ?? 1;
-  const porPagina = params.porPagina ?? 8;
+}
 
+export async function listarRequisicoes({
+  usuarioId,
+  status,
+  numero,
+  solicitante,
+  pagina = 1,
+  porPagina = 10,
+}: ListarRequisicoesParams = {}): Promise<PaginaResultado<Requisicao>> {
   let consulta = supabase
     .from("requisicoes")
     .select(
-      "id, usuario_id, numero, solicitante, departamento_id, data_solicitacao, status, observacoes, aprovado_por, data_aprovacao, departamentos(nome)",
+      "id, numero, solicitante, usuario_id, departamento_id, data_solicitacao, status, observacoes, aprovado_por, data_aprovacao, departamentos(nome)",
       { count: "exact" },
     );
 
-  if (params.somenteMinhas) {
-    consulta = consulta.eq("usuario_id", params.usuarioId ?? "");
-  } else {
-    consulta = consulta.eq("status", "pendente");
-  }
-
-  if (params.status) consulta = consulta.eq("status", params.status);
-  if (params.numero) consulta = consulta.ilike("numero", `%${params.numero}%`);
-  if (params.solicitante) consulta = consulta.ilike("solicitante", `%${params.solicitante}%`);
+  if (usuarioId) consulta = consulta.eq("usuario_id", usuarioId);
+  if (status) consulta = consulta.eq("status", status);
+  if (numero) consulta = consulta.ilike("numero", `%${numero}%`);
+  if (solicitante) consulta = consulta.ilike("solicitante", `%${solicitante}%`);
 
   const { data, error, count } = await consulta
-    .order("id", { ascending: false })
+    .order("data_solicitacao", { ascending: false })
+    .order("numero", { ascending: false })
     .range((pagina - 1) * porPagina, pagina * porPagina - 1);
 
   if (error) throw new Error(error.message);
 
-  const linhas = (data ?? []) as unknown as LinhaRequisicao[];
-  const total = count ?? linhas.length;
+  const brutas = (data ?? []) as Array<
+    Requisicao & { departamentos?: { nome: string } | { nome: string }[] | null }
+  >;
 
+  const requisicoes: Requisicao[] = brutas.map((linha) => {
+    const departamento = linha.departamentos;
+    const nome = Array.isArray(departamento)
+      ? departamento[0]?.nome
+      : departamento?.nome ?? null;
+    return {
+      id: linha.id,
+      numero: linha.numero,
+      solicitante: linha.solicitante,
+      usuario_id: linha.usuario_id,
+      departamento_id: linha.departamento_id,
+      departamento_nome: nome ?? null,
+      data_solicitacao: linha.data_solicitacao,
+      status: linha.status,
+      observacoes: linha.observacoes,
+      aprovado_por: linha.aprovado_por,
+      data_aprovacao: linha.data_aprovacao,
+    };
+  });
+
+  const total = count ?? 0;
   return {
-    dados: linhas.map(mapearRequisicao),
+    dados: requisicoes,
     total,
-    pagina,
     paginas: Math.max(1, Math.ceil(total / porPagina)),
   };
 }
 
-/** Lista os itens de uma requisicao (com o estoque atual do produto). */
 export async function listarItensRequisicao(requisicaoId: string): Promise<ItemRequisicao[]> {
   const { data, error } = await supabase
     .from("requisicoes_itens")
     .select(
-      "id, requisicao_id, produto_id, descricao, quantidade, unidade, quantidade_atendida, justificativa_corte, produtos(estoque_atual)",
+      "id, requisicao_id, produto_id, descricao, quantidade, unidade, quantidade_atendida, justificativa_corte",
     )
     .eq("requisicao_id", requisicaoId)
     .order("criado_em", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return ((data ?? []) as unknown as LinhaItem[]).map(mapearItem);
+  return (data ?? []) as ItemRequisicao[];
 }
 
-/** Cria uma nova requisicao (cabecalho) e devolve o id gerado. */
-export async function criarRequisicao(params: {
+export async function buscarProdutos({
+  busca,
+  pagina = 1,
+  porPagina = 10,
+}: {
+  busca?: string;
+  pagina?: number;
+  porPagina?: number;
+} = {}): Promise<PaginaResultado<ProdutoPesquisavel>> {
+  let consulta = supabase
+    .from("produtos")
+    .select("id, nome, estoque_atual, unidades_medida(sigla)", { count: "exact" })
+    .eq("ativo", true);
+
+  if (busca) consulta = consulta.ilike("nome", `%${busca}%`);
+
+  const { data, error, count } = await consulta
+    .order("nome", { ascending: true })
+    .range((pagina - 1) * porPagina, pagina * porPagina - 1);
+
+  if (error) throw new Error(error.message);
+
+  const brutos = (data ?? []) as Array<
+    ProdutoPesquisavel & {
+      unidades_medida?: { sigla: string } | { sigla: string }[] | null;
+    }
+  >;
+
+  const produtos: ProdutoPesquisavel[] = brutos.map((linha) => {
+    const unidade = linha.unidades_medida;
+    const sigla = Array.isArray(unidade) ? unidade[0]?.sigla : unidade?.sigla;
+    return {
+      id: linha.id,
+      nome: linha.nome,
+      unidade: sigla ?? null,
+      estoque_atual: Number(linha.estoque_atual ?? 0),
+    };
+  });
+
+  const total = count ?? 0;
+  return { dados: produtos, total, paginas: Math.max(1, Math.ceil(total / porPagina)) };
+}
+
+export async function buscarDepartamentos({
+  busca,
+  pagina = 1,
+  porPagina = 10,
+}: {
+  busca?: string;
+  pagina?: number;
+  porPagina?: number;
+} = {}): Promise<PaginaResultado<DepartamentoPesquisavel>> {
+  let consulta = supabase
+    .from("departamentos")
+    .select("id, nome, sigla", { count: "exact" })
+    .eq("ativo", true);
+
+  if (busca) consulta = consulta.ilike("nome", `%${busca}%`);
+
+  const { data, error, count } = await consulta
+    .order("nome", { ascending: true })
+    .range((pagina - 1) * porPagina, pagina * porPagina - 1);
+
+  if (error) throw new Error(error.message);
+
+  const total = count ?? 0;
+  return {
+    dados: (data ?? []) as DepartamentoPesquisavel[],
+    total,
+    paginas: Math.max(1, Math.ceil(total / porPagina)),
+  };
+}
+
+/** Alias usados pelas modais de pesquisa de requisição. */
+export const buscarProdutosRequisicao = buscarProdutos;
+export const buscarDepartamentosRequisicao = buscarDepartamentos;
+
+/** Gera o numero sequencial da requisicao (REQ-AAAA-NNNN) no banco. */
+export async function gerarNumeroRequisicao(): Promise<string> {
+  const { data, error } = await supabase.rpc("gerar_numero_requisicao");
+  if (error) throw new Error(error.message);
+  const numero = typeof data === "string" ? data : String(data ?? "");
+  if (!numero) throw new Error("Não foi possível gerar o número da requisição.");
+  return numero;
+}
+
+export async function criarRequisicao({
+  usuarioId,
+  numero,
+  solicitante,
+  departamentoId,
+  observacoes,
+}: {
   usuarioId: string;
   numero: string;
   solicitante: string;
-  departamentoId: string | null;
-  observacoes: string | null;
+  departamentoId: string;
+  observacoes?: string | null;
 }): Promise<string> {
   const { data, error } = await supabase
     .from("requisicoes")
     .insert({
-      usuario_id: params.usuarioId,
-      numero: params.numero,
-      solicitante: params.solicitante,
-      departamento_id: params.departamentoId,
-      observacoes: params.observacoes,
+      usuario_id: usuarioId,
+      numero,
+      solicitante,
+      departamento_id: departamentoId,
+      observacoes: observacoes ?? null,
       status: "pendente",
       data_solicitacao: new Date().toISOString(),
     })
@@ -202,138 +257,98 @@ export async function criarRequisicao(params: {
   return data.id as string;
 }
 
-/** Insere um item no "carrinho" da requisicao. */
-export async function adicionarItemRequisicao(params: {
+export async function adicionarItemRequisicao({
+  requisicaoId,
+  produtoId,
+  descricao,
+  quantidade,
+  unidade,
+}: {
   requisicaoId: string;
   produtoId: string;
   descricao: string;
   quantidade: number;
-  unidade: string | null;
+  unidade?: string | null;
 }): Promise<void> {
   const { error } = await supabase.from("requisicoes_itens").insert({
-    requisicao_id: params.requisicaoId,
-    produto_id: params.produtoId,
-    descricao: params.descricao,
-    quantidade: params.quantidade,
-    unidade: params.unidade,
+    requisicao_id: requisicaoId,
+    produto_id: produtoId,
+    descricao,
+    quantidade,
+    unidade: unidade ?? null,
   });
 
   if (error) throw new Error(error.message);
 }
 
-/** Remove um item do "carrinho". */
+export async function atualizarItemRequisicao({
+  itemId,
+  quantidade,
+  quantidadeAtendida,
+  justificativaCorte,
+}: {
+  itemId: string;
+  quantidade?: number;
+  quantidadeAtendida?: number | null;
+  justificativaCorte?: string | null;
+}): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if (quantidade !== undefined) payload.quantidade = quantidade;
+  if (quantidadeAtendida !== undefined) payload.quantidade_atendida = quantidadeAtendida;
+  if (justificativaCorte !== undefined) payload.justificativa_corte = justificativaCorte;
+
+  const { error } = await supabase
+    .from("requisicoes_itens")
+    .update(payload)
+    .eq("id", itemId);
+
+  if (error) throw new Error(error.message);
+}
+
 export async function removerItemRequisicao(itemId: string): Promise<void> {
   const { error } = await supabase.from("requisicoes_itens").delete().eq("id", itemId);
   if (error) throw new Error(error.message);
 }
 
-/** Aprova a requisicao (chefia). */
-export async function aprovarRequisicao(requisicaoId: string, usuarioId: string): Promise<void> {
+export async function atualizarStatusRequisicao(
+  requisicaoId: string,
+  status: string,
+  aprovadorId?: string | null,
+): Promise<void> {
+  const payload: Record<string, unknown> = { status };
+  if (status === "aprovada") {
+    payload.aprovado_por = aprovadorId ?? null;
+    payload.data_aprovacao = new Date().toISOString();
+  }
+
   const { error } = await supabase
     .from("requisicoes")
-    .update({
-      status: "aprovada",
-      aprovado_por: usuarioId,
-      data_aprovacao: new Date().toISOString(),
-    })
+    .update(payload)
     .eq("id", requisicaoId);
+
   if (error) throw new Error(error.message);
 }
 
-/** Rejeita a requisicao (chefia) -> cancelada. */
+export async function aprovarRequisicao(
+  requisicaoId: string,
+  aprovadorId: string,
+): Promise<void> {
+  await atualizarStatusRequisicao(requisicaoId, "aprovada", aprovadorId);
+}
+
 export async function rejeitarRequisicao(requisicaoId: string): Promise<void> {
-  const { error } = await supabase
-    .from("requisicoes")
-    .update({ status: "cancelada" })
-    .eq("id", requisicaoId);
-  if (error) throw new Error(error.message);
+  await atualizarStatusRequisicao(requisicaoId, "rejeitada");
 }
 
-/** Exclui definitivamente a requisicao (apenas status pendente). */
+export async function atenderRequisicao(requisicaoId: string): Promise<void> {
+  await atualizarStatusRequisicao(requisicaoId, "atendida");
+}
+
+export async function cancelarRequisicao(requisicaoId: string): Promise<void> {
+  await atualizarStatusRequisicao(requisicaoId, "cancelada");
+}
+
 export async function excluirRequisicao(requisicaoId: string): Promise<void> {
   const { error } = await supabase.from("requisicoes").delete().eq("id", requisicaoId);
   if (error) throw new Error(error.message);
-}
-
-/** Marca a requisicao como atendida pelo almoxarifado. */
-export async function atenderRequisicao(requisicaoId: string): Promise<void> {
-  const { error } = await supabase
-    .from("requisicoes")
-    .update({ status: "atendida" })
-    .eq("id", requisicaoId);
-  if (error) throw new Error(error.message);
-}
-
-/** Lupa de produtos ativos (para o carrinho de materiais). */
-export async function buscarProdutos(params: {
-  busca?: string;
-  pagina?: number;
-  porPagina?: number;
-}): Promise<Pagina<ProdutoPesquisavel>> {
-  const pagina = params.pagina ?? 1;
-  const porPagina = params.porPagina ?? 5;
-
-  let consulta = supabase
-    .from("produtos")
-    .select("id, nome, estoque_atual, unidades_medida(sigla)", { count: "exact" })
-    .eq("ativo", true);
-
-  if (params.busca) consulta = consulta.ilike("nome", `%${params.busca}%`);
-
-  const { data, error, count } = await consulta
-    .order("nome", { ascending: true })
-    .range((pagina - 1) * porPagina, pagina * porPagina - 1);
-
-  if (error) throw new Error(error.message);
-
-  const linhas = (data ?? []) as unknown as {
-    id: string;
-    nome: string;
-    estoque_atual: number | null;
-    unidades_medida?: { sigla: string | null }[] | null;
-  }[];
-
-  return {
-    dados: linhas.map((linha) => ({
-      id: linha.id,
-      nome: linha.nome,
-      unidade: linha.unidades_medida?.[0]?.sigla ?? "",
-      estoque_atual: Number(linha.estoque_atual ?? 0),
-    })),
-    total: count ?? linhas.length,
-    pagina,
-    paginas: Math.max(1, Math.ceil((count ?? linhas.length) / porPagina)),
-  };
-}
-
-/** Lupa de departamentos (setor de destino). */
-export async function buscarDepartamentos(params: {
-  busca?: string;
-  pagina?: number;
-  porPagina?: number;
-}): Promise<Pagina<DepartamentoPesquisavel>> {
-  const pagina = params.pagina ?? 1;
-  const porPagina = params.porPagina ?? 5;
-
-  let consulta = supabase
-    .from("departamentos")
-    .select("id, nome, sigla", { count: "exact" })
-    .eq("ativo", true);
-
-  if (params.busca) consulta = consulta.ilike("nome", `%${params.busca}%`);
-
-  const { data, error, count } = await consulta
-    .order("nome", { ascending: true })
-    .range((pagina - 1) * porPagina, pagina * porPagina - 1);
-
-  if (error) throw new Error(error.message);
-
-  const linhas = (data ?? []) as unknown as DepartamentoPesquisavel[];
-
-  return {
-    dados: linhas,
-    total: count ?? linhas.length,
-    pagina,
-    paginas: Math.max(1, Math.ceil((count ?? linhas.length) / porPagina)),
-  };
 }
